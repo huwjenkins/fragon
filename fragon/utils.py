@@ -233,6 +233,7 @@ def define_search(args):
     if args.solvent is None:
       sys.exit("You must set solvent content with --solvent if you don't supply a sequence")
     else:
+      search['solvent'] = args.solvent
       search['seqin'] = None
   search['ncs_copies'] = args.ncs_copies
   search['num_solutions'] = args.solutions

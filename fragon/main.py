@@ -165,10 +165,10 @@ def run():
         utils.write_output({'Warning':'Solvent', 'calc_z':calc_z, 'calc_solvent':calc_solvent},
                            json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
 
-      utils.write_output({'ncs_copies':search['ncs_copies'], 'solvent':scoring['solvent']},
-                          json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
       # let Phaser calculate
       phaser_solvent = None
+    utils.write_output({'ncs_copies':search['ncs_copies'], 'solvent':scoring['solvent']},
+                        json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
     log.debug('DEBUG search solvent: %s solvent %0.2f\n' % (search['solvent'], scoring['solvent']))
 
   if start_point not in ['Scored solutions']:
