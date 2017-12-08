@@ -98,6 +98,9 @@ def mtz_info(mtzin, i=None, sigi=None, fp=None, sigfp=None, log=None):
     if str(array.info().labels) == label:
       data_low_res = array.d_max_min()[0]
       data_high_res = array.d_max_min()[1]
+  if anomalous_merged:
+    data_low_res = iobs.d_max_min()[0]
+    data_high_res = iobs.d_max_min()[1]
   mtz_low_res = round(mtz_low_res, 2)
   mtz_high_res = round(mtz_high_res, 2)
   data_low_res = round(data_low_res, 2)
