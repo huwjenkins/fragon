@@ -151,6 +151,7 @@ def tidy_data(solution_id, fp, sigfp):
   fobs_mtz.mtz_object().write(mtzout)
 
 def aniso_correct(solution_id, mtzin, i, sigi, fp, sigfp, logfile, log):
+  from place import CallbackObject
   input = phaser.InputMR_DAT()
   input.setHKLI(mtzin)
   if i is not None and sigi is not None:
@@ -159,7 +160,9 @@ def aniso_correct(solution_id, mtzin, i, sigi, fp, sigfp, logfile, log):
     input.setLABI_F_SIGF(fp, sigfp)
   output = phaser.Output()
   aniso_log = open(logfile, 'w')
-  output.setPackagePhenix(aniso_log)
+  output_object = CallbackObject(None, None)
+  output.setPhenixPackageCallback(output_object)
+  output.set_file_object(aniso_log)
   data = phaser.runMR_DAT(input, output)
   mtzout = solution_id + '.aniso'
   input = phaser.InputANO()

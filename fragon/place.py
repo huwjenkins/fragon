@@ -9,10 +9,13 @@ class CallbackObject(object):
     self.xmlroot = xmlroot
 
   def startProgressBar (self, label, size):
-    from fragon.utils import write_output
-    if label != 'Generating Statistics':
-      callback = ['progress', label]
-      write_output({'callback':callback}, json_file=None, xml_file=self.xml_file, xmlroot=self.xmlroot, output=None)
+    if self.xml_file is None and self.xmlroot is None:
+      pass # for command-line mode
+    else:
+      from fragon.utils import write_output
+      if label != 'Generating Statistics':
+        callback = ['progress', label]
+        write_output({'callback':callback}, json_file=None, xml_file=self.xml_file, xmlroot=self.xmlroot, output=None)
   def incrementProgressBar (self):
     pass
   def endProgressBar (self):
@@ -22,18 +25,21 @@ class CallbackObject(object):
   def loggraph (self, title, data):
     pass
   def call_back (self, message, data):
-    from fragon.utils import write_output
-    if message == 'summary':
-      if data.startswith('** New Best LLG'):
-        llg = data.split('=')[1].split()[0]
-        callback = ['Best LLG', llg]
-        write_output({'callback':callback}, json_file=None, xml_file=self.xml_file, xmlroot=self.xmlroot, output=None)
-    elif message == 'current best solution':
-      for item in data.split():
-        if item[0:5] == 'TFZ==':
-          tfz = item.split('==')[1]
-          callback = ['Best TFZ', tfz]
+    if self.xml_file is None and self.xmlroot is None:
+      pass # for command-line mode
+    else:
+      from fragon.utils import write_output
+      if message == 'summary':
+        if data.startswith('** New Best LLG'):
+          llg = data.split('=')[1].split()[0]
+          callback = ['Best LLG', llg]
           write_output({'callback':callback}, json_file=None, xml_file=self.xml_file, xmlroot=self.xmlroot, output=None)
+      elif message == 'current best solution':
+        for item in data.split():
+          if item[0:5] == 'TFZ==':
+            tfz = item.split('==')[1]
+            callback = ['Best TFZ', tfz]
+            write_output({'callback':callback}, json_file=None, xml_file=self.xml_file, xmlroot=self.xmlroot, output=None)
 
 def prepare_data(mtzin, i, sigi, fp, sigfp, logfile, log):
   input = phaser.InputMR_DAT()
@@ -44,7 +50,9 @@ def prepare_data(mtzin, i, sigi, fp, sigfp, logfile, log):
     input.setLABI_F_SIGF(fp, sigfp)
   output = phaser.Output()
   data_log = open(logfile, 'w')
-  output.setPackagePhenix(data_log)
+  output_object = CallbackObject(None, None)
+  output.setPhenixPackageCallback(output_object)
+  output.set_file_object(data_log)
   data = phaser.runMR_DAT(input, output)
   data_log.close()
   if data.Success():
@@ -61,7 +69,9 @@ def calculate_solvent(root, data, seqin, ncs_copies, highres, logfile, log):
   input.setRESO(highres, 10000)
   output = phaser.Output()
   cca_log = open(logfile, 'w')
-  output.setPackagePhenix(cca_log)
+  output_object = CallbackObject(None, None)
+  output.setPhenixPackageCallback(output_object)
+  output.set_file_object(cca_log)
   cca = phaser.runCCA(input, output)
   cca_log.close()
   # check if solvent content is higher than average
@@ -130,8 +140,7 @@ def run_phaser(root, xml_file, xmlroot, log, logfile, data, pdbin, copies, rms, 
     # we don't need to write out the files here
     input.setXYZO(False)
     input.setHKLO(False)
-  else:
-    input.setXYZO_ENSE(False)
+  input.setXYZO_ENSE(False)
 
   # turn off tNCS correction if required
   if tncs:
@@ -162,10 +171,9 @@ def run_phaser(root, xml_file, xmlroot, log, logfile, data, pdbin, copies, rms, 
     input.setOUTP_LEVE('SUMMARY') #command line
   output = phaser.Output()
   phaser_log = open(logfile, 'w')
-  output.setPackagePhenix(phaser_log)
-  if xml_file is not None and xmlroot is not None:
-    output_object = CallbackObject(xml_file, xmlroot)
-    output.setPhenixCallback(output_object)
+  output_object = CallbackObject(xml_file, xmlroot)
+  output.setPhenixPackageCallback(output_object)
+  output.set_file_object(phaser_log)
   mr = phaser.runMR_AUTO(input, output)
   phaser_log.close()
   if mr.Success():
@@ -332,10 +340,9 @@ def run_rnp(root, xml_file, xmlroot, logfile, log, data, tncs, pdbin, models,
     input.setOUTP_LEVE('SUMMARY') #command line
   output = phaser.Output()
   rescore_log = open(logfile, 'w')
-  output.setPackagePhenix(rescore_log)
-  if xml_file is not None and xmlroot is not None:
-    output_object = CallbackObject(xml_file, xmlroot)
-    output.setPhenixCallback(output_object)
+  output_object = CallbackObject(xml_file, xmlroot)
+  output.setPhenixPackageCallback(output_object)
+  output.set_file_object(rescore_log)
   rnp = phaser.runMR_RNP(input, output)
   rescore_log.close()
   if rnp.Success():
