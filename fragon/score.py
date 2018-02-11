@@ -1,3 +1,6 @@
+#
+#  Copyright (C) 2015-2018 Huw Jenkins & University of York
+#
 import glob, os, subprocess
 from fragon.data import massage_data, tidy_data, extend_ecalc
 from fragon.utils import write_output, write_results_json, read_results_json

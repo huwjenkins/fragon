@@ -1,3 +1,6 @@
+#
+#  Copyright (C) 2015-2018 Huw Jenkins & University of York
+#
 import sys
 import shutil
 from iotbx import mtz

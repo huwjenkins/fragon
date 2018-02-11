@@ -1,3 +1,6 @@
+#
+#  Copyright (C) 2015-2018 Huw Jenkins & University of York
+#
 from __future__ import division
 import os
 import sys
