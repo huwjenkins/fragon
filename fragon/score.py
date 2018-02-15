@@ -1,6 +1,23 @@
-#
-#  Copyright (C) 2015-2018 Huw Jenkins & University of York
-#
+"""
+    Fragon score.py 
+
+    Copyright (C) 2017-2018 University of York
+    Author: Huw Jenkins
+
+    This program is free software: you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public License
+    version 3, modified in accordance with the provisions of the
+    license to address the requirements of UK law.
+
+    You should have received a copy of the modified GNU Lesser General
+    Public License along with this program.  If not, copies may be
+    downloaded from http://www.ccp4.ac.uk/ccp4license.php
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+"""
 import glob, os, subprocess
 from fragon.data import massage_data, tidy_data, extend_ecalc
 from fragon.utils import write_output, write_results_json, read_results_json
