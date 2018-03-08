@@ -209,6 +209,7 @@ def run():
           log.info('Testing a maximum of %d solution(s) until ACORN CC is above %0.5f\n' %
                    (search['num_solutions'], scoring['acornCC_solved']))
     else:
+      acornCC_solved, acornCC_diff = scoring['acornCC_solved'], scoring['acornCC_diff']
       utils.write_output({'acornCC_solved':'Test All'},
                         json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
       if search['have_ensemble']:
