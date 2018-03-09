@@ -18,56 +18,47 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU Lesser General Public License for more details.
 """
-import glob, os, subprocess
+from __future__ import print_function
+import glob, os, shlex, subprocess
 from fragon.data import massage_data, tidy_data, extend_ecalc
 from fragon.utils import write_output, write_results_json, read_results_json
 from libtbx import easy_mp
 
-# writing acorn script
-def write_acorn_script(scriptname, mtzin, xyzin, mtzout, lowres, highres, solvent):
-  # we write a script to run acorn so need to make sure sh is in path
-  for path in os.environ.get('PATH', '').split(':'):
-    if os.path.exists(os.path.join(path, 'sh')) and not os.path.isdir(os.path.join(path, 'sh')):
-      sh = os.path.join(path, 'sh')
-  with open(scriptname, 'w') as acorn_script:
-    print >> acorn_script, '#!' + sh
-    print >> acorn_script, 'acorn hklin %s xyzin %s hklout %s <<EOF' % (mtzin, xyzin, mtzout)
-    print >> acorn_script, 'labin E=E_ISO FP=F_ISO SIGFP=SIGF_ISO'
-    print >> acorn_script, 'RESO %0.2f %0.2f' % (lowres,highres)
+def run_acorn(mtzin, xyzin, mtzout, lowres, highres, solvent, acorn_script, acorn_logfile):
+  with open(acorn_script,'w') as com:
+    print('labin E=E_ISO FP=F_ISO SIGFP=SIGF_ISO', file=com)
+    print('RESO %0.2f %0.2f' % (lowres,highres), file=com)
     if highres > 1.0:
-      print >> acorn_script, 'EXTEND 50.0 1.0'
+      print('EXTEND 50.0 1.0', file=com)
     else:
-      print >> acorn_script, 'EXTEND 50.0 %0.2f' % highres
-    print >> acorn_script, 'ESTRO 0.8'
-    print >> acorn_script, 'POSI 1'
-    print >> acorn_script, 'SOLV %s' % solvent
-    print >> acorn_script, 'NTRY 1'
-    print >> acorn_script, 'PSFINISH 0.25'
-    print >> acorn_script, 'CCFIN 0.9'
-    print >> acorn_script, 'END'
-    print >> acorn_script, 'EOF'
-  os.chmod(scriptname,0700)
-
-def run_acorn(acorn_script, acorn_logfile):
-  acorn_script = os.path.abspath(acorn_script)
-  acorn_log = open(acorn_logfile, 'w')
-  acorn = subprocess.Popen(acorn_script, stdout=subprocess.PIPE)
-  per_cycle = []
-  while True:
-    line = acorn.stdout.readline()
-    if line != '':
-      acorn_log.write(line)
-      if 'R-factor & Corr for medium E' in line:
-        temp = line.split()
-        cc = float(temp[10])
-        cycle = int(temp[14])
-        per_cycle.append({'cycle':cycle, 'CCs':cc})
-      if ' Output phase set ' in line:
-        cc_final = cc
-    else:
-      break
+      print('EXTEND 50.0 %0.2f' % highres, file=com)
+    print('ESTRO 0.8', file=com)
+    print('POSI 1', file=com)
+    print('SOLV %s' % solvent, file=com)
+    print('NTRY 1', file=com)
+    print('PSFINISH 0.25', file=com)
+    print('CCFIN 0.9', file=com)
+    print('END', file=com)
+  
+  acorn_command = shlex.split('acorn hklin %s xyzin %s hklout %s' % (mtzin, xyzin, mtzout))
+  with open(acorn_script, 'r') as com, open(acorn_logfile, 'w') as acorn_log:
+    acorn = subprocess.Popen(acorn_command, stdin=com, stdout=subprocess.PIPE)
+    per_cycle = []
+    while True:
+      line = acorn.stdout.readline()
+      if line != '':
+        acorn_log.write(line)
+        if 'R-factor & Corr for medium E' in line:
+          temp = line.split()
+          cc = float(temp[10])
+          cycle = int(temp[14])
+          per_cycle.append({'cycle':cycle, 'CCs':cc})
+        if ' Output phase set ' in line:
+          cc_final = cc
+      else:
+        break
   return cc_final, per_cycle
-
+  
 def not_definitive(scores, acornCC_solved, acornCC_diff):
   if len(scores) == 0:
     return True
@@ -102,11 +93,11 @@ def test_solution(log, tempdir, scores, solution, test_all, acornCC_solved, acor
     mtzin = solution_id + '.aniso.ecalc.mtz'
     xyzin = solution_id + '.pdb'
     mtzout = solution_id + '.acorn.mtz'
-    acorn_script = solution_id + '_acorn.sh'
+    acorn_script = solution_id + '_acorn.com'
     acorn_logfile = solution_id + '_acorn.log'
-    write_acorn_script(scriptname=acorn_script, mtzin=mtzin, xyzin=xyzin, mtzout=mtzout,
-                       lowres=lowres, highres=highres, solvent=solvent)
-    cc, cc_per_cycle = run_acorn(acorn_script, acorn_logfile)
+    cc, cc_per_cycle = run_acorn(mtzin=mtzin, xyzin=xyzin, mtzout=mtzout, 
+                                 lowres=lowres, highres=highres, solvent=solvent,
+                                 acorn_script=acorn_script, acorn_logfile=acorn_logfile)
     write_results_json(version=None, results_json=solution_id + '.acorn.json', solutions={'name':None, 'id':solution['id'], 'acornCC':cc, 'acornCC_per_cycle':cc_per_cycle})
   else:
     cc = None
