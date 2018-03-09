@@ -384,6 +384,8 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
     temp_filename = json_file + '.tmp'
     with open(temp_filename, 'w') as jsonfile:
       print >> jsonfile, json.dumps(output, sort_keys=True, indent=2, separators=(',', ': '))
+    if os.path.exists(json_file):
+      os.remove(json_file)
     os.rename(temp_filename, json_file)
     return output
   elif xmlroot is None:
@@ -422,6 +424,8 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
         node.text = items[key].__str__()
     temp_filename = 'program.xml.tmp'
     with open(temp_filename, 'w') as xmlfile: xmlfile.write(etree.tostring(xmlroot, pretty_print=True))
+    if os.path.exists(xml_file):
+      os.remove(xml_file)
     os.rename(temp_filename, xml_file)
 
 def read_results_json(results_json):
