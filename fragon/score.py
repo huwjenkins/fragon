@@ -24,6 +24,49 @@ from fragon.data import massage_data, tidy_data, extend_ecalc
 from fragon.utils import write_output, write_results_json, read_results_json
 from libtbx import easy_mp
 
+class setup_solution_tester(object):
+  def __init__(self, scores, log, tempdir, test_all, acornCC_solved, acornCC_diff, i, sigi, fp, sigfp, lowres, highres, solvent):
+    self.scores = scores
+    self.log = log
+    self.tempdir = tempdir
+    self.test_all = test_all
+    self.acornCC_solved = acornCC_solved
+    self.acornCC_diff = acornCC_diff
+    self.i = i
+    self.sigi = sigi
+    self.fp = fp
+    self.sigfp = sigfp
+    self.lowres = lowres
+    self.highres = highres
+    self.solvent = solvent
+  
+  def __call__(self, solution):
+    if len(self.scores) == 0: # first callback
+      for acorn_json in glob.glob('*.acorn.json'):
+        try:
+          self.scores.append(read_results_json(acorn_json)['acornCC'])
+        except IOError: 
+          self.log.debug('DEBUG Error reading file: %s' % acorn_json)
+    elif not_definitive(self.scores, self.acornCC_solved, self.acornCC_diff): # avoid needless file reads
+      try:
+        self.scores.extend([ read_results_json(acorn_json)['acornCC'] for acorn_json in glob.glob('*.acorn.json') if read_results_json(acorn_json)['acornCC'] not in self.scores])
+      except IOError:
+        self.log.debug('DEBUG Error reading file: %s' % acorn_json)
+    return test_solution(log=self.log, 
+                         tempdir=self.tempdir, 
+                         scores=self.scores, 
+                         solution=solution,
+                         test_all=self.test_all, 
+                         acornCC_solved=self.acornCC_solved, 
+                         acornCC_diff=self.acornCC_diff,
+                         i=self.i, 
+                         sigi=self.sigi, 
+                         fp=self.fp, 
+                         sigfp=self.sigfp,
+                         lowres=self.lowres, 
+                         highres=self.highres, 
+                         solvent=self.solvent)
+     
 def run_acorn(mtzin, xyzin, mtzout, lowres, highres, solvent, acorn_script, acorn_logfile):
   with open(acorn_script,'w') as com:
     print('labin E=E_ISO FP=F_ISO SIGFP=SIGF_ISO', file=com)
@@ -119,24 +162,6 @@ def test_solutions(log, json_file, xml_file, xmlroot, output, solutions, num_sol
     write_output({'solutions':solutions},
                 json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
 
-  def solution_tester(solution):
-    # the next process is launched before the callback updates scores so we have to get the CC from a file
-    if len(scores) == 0: # first callback
-      for acorn_json in glob.glob('*.acorn.json'):
-        try:
-          scores.append(read_results_json(acorn_json)['acornCC'])
-        except IOError: 
-          log.debug('DEBUG Error reading file: %s' % acorn_json)
-    elif not_definitive(scores, acornCC_solved, acornCC_diff): # avoid needless file reads
-      try:
-        scores.extend([ read_results_json(acorn_json)['acornCC'] for acorn_json in glob.glob('*.acorn.json') if read_results_json(acorn_json)['acornCC'] not in scores])
-      except IOError:
-        log.debug('DEBUG Error reading file: %s' % acorn_json)
-    return test_solution(log=log, tempdir=tempdir, scores=scores, solution=solution,
-                         test_all=test_all, acornCC_solved=acornCC_solved, acornCC_diff=acornCC_diff,
-                         i=i, sigi=sigi, fp=fp, sigfp=sigfp,
-                         lowres=lowres, highres=highres, solvent=solvent)
-
   def callback(result):
     if result['acornCC'] is not None:
       log.info('Solution %d of %d ACORN CC = %0.5f\n' % (result['number'], num_solutions, result['acornCC']))
@@ -161,6 +186,13 @@ def test_solutions(log, json_file, xml_file, xmlroot, output, solutions, num_sol
     else:
       write_output({'result':result},
                   json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
-
+  solution_tester = setup_solution_tester(scores=scores, 
+                                          log=log, 
+                                          tempdir=tempdir,
+                                          test_all=test_all, 
+                                          acornCC_solved=acornCC_solved, 
+                                          acornCC_diff=acornCC_diff,
+                                          i=i, sigi=sigi, fp=fp, sigfp=sigfp,
+                                          lowres=lowres, highres=highres, solvent=solvent)
   results = easy_mp.parallel_map(func=solution_tester, iterable=solutions, callback=callback, preserve_order=False, processes=nproc)
   return results
