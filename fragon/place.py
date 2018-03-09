@@ -18,6 +18,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU Lesser General Public License for more details.
 """
+from __future__ import print_function
 import os
 import phaser
 from iotbx import pdb
@@ -237,7 +238,7 @@ def split_chains(pdbin, copies):
     model = name + '.chains%s%s' % (chain_ids[copy*2], chain_ids[copy*2 + 1])
     models.append(model)
     with open(model+'.pdb', 'w') as pdbfile:
-      print >> pdbfile, selection.as_pdb_string(),'END'
+      print(selection.as_pdb_string(),'END', file=pdbfile)
   return models
 
 def split_strands(pdbin, copies):
@@ -291,7 +292,7 @@ def split_strands(pdbin, copies):
     model = name + '.chains%s%s%s%s' % (chain_ids[copy*4], chain_ids[copy*4 + 1],chain_ids[copy*4 + 2],chain_ids[copy*4 + 3])
     models.append(model)
     with open(model+'.pdb', 'w') as pdbfile:
-      print >> pdbfile, selection.as_pdb_string(),'END'
+      print(selection.as_pdb_string(),'END', file=pdbfile)
   return models
 
 def split_models(pdbin):
@@ -306,7 +307,7 @@ def split_models(pdbin):
     model = name + '.model%d' % (model_no + 1)
     models.append(model)
     with open(model + '.pdb','w') as pdbfile:
-      print >> pdbfile, selection.as_pdb_string(),'END'
+      print(selection.as_pdb_string(),'END', file=pdbfile)
   return models
 
 def run_rnp(root, xml_file, xmlroot, logfile, log, data, tncs, pdbin, models,

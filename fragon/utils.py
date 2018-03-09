@@ -18,6 +18,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU Lesser General Public License for more details.
 """
+from __future__ import print_function
 import argparse
 import json
 import os
@@ -369,7 +370,7 @@ def write_results_json(version=None, results_json=None, name=None, root=None, mt
   else:
     output = solutions
   with open(results_json, 'w') as results:
-    print >> results, json.dumps(output, sort_keys=True, indent=2, separators=(',', ': '))
+    print(json.dumps(output, sort_keys=True, indent=2, separators=(',', ': ')), file=results)
 
 def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None):
   # in non-i2 mode items are added to the output dictionary which is dumped to json
@@ -383,7 +384,7 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
       output.update(items)
     temp_filename = json_file + '.tmp'
     with open(temp_filename, 'w') as jsonfile:
-      print >> jsonfile, json.dumps(output, sort_keys=True, indent=2, separators=(',', ': '))
+      print(json.dumps(output, sort_keys=True, indent=2, separators=(',', ': ')), file=jsonfile)
     if os.path.exists(json_file):
       os.remove(json_file)
     os.rename(temp_filename, json_file)
