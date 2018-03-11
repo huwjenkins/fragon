@@ -19,15 +19,21 @@
     GNU Lesser General Public License for more details.
 """
 from __future__ import print_function
-import glob, os, shlex, subprocess
+import glob
+import os
+import logging
+import shlex
+import subprocess
 from fragon.data import massage_data, tidy_data, extend_ecalc
 from fragon.utils import write_output, write_results_json, read_results_json
 from libtbx import easy_mp
 
+log = logging.getLogger(__name__)
+
 class setup_solution_tester(object):
-  def __init__(self, scores, log, tempdir, test_all, acornCC_solved, acornCC_diff, i, sigi, fp, sigfp, lowres, highres, solvent):
+  def __init__(self, scores, tempdir, test_all, acornCC_solved, acornCC_diff, i, sigi, fp, sigfp, lowres, highres, solvent):
     self.scores = scores
-    self.log = log
+    self.log = logging.getLogger(__name__)
     self.tempdir = tempdir
     self.test_all = test_all
     self.acornCC_solved = acornCC_solved
@@ -52,8 +58,7 @@ class setup_solution_tester(object):
         self.scores.extend([ read_results_json(acorn_json)['acornCC'] for acorn_json in glob.glob('*.acorn.json') if read_results_json(acorn_json)['acornCC'] not in self.scores])
       except IOError:
         self.log.debug('DEBUG Error reading file: %s' % acorn_json)
-    return test_solution(log=self.log, 
-                         tempdir=self.tempdir, 
+    return test_solution(tempdir=self.tempdir, 
                          scores=self.scores, 
                          solution=solution,
                          test_all=self.test_all, 
@@ -112,7 +117,7 @@ def not_definitive(scores, acornCC_solved, acornCC_diff):
   else:
     return True
 
-def test_solution(log, tempdir, scores, solution, test_all, acornCC_solved, acornCC_diff,
+def test_solution(tempdir, scores, solution, test_all, acornCC_solved, acornCC_diff,
                   i, sigi, fp, sigfp, lowres, highres, solvent):
   solution_id = solution['id']
   if i is not None and sigi is not None:
@@ -132,7 +137,7 @@ def test_solution(log, tempdir, scores, solution, test_all, acornCC_solved, acor
        massage_data(solution_id, i, sigi)
     else:
       tidy_data(solution_id, fp, sigfp)
-    extend_ecalc(solution_id=solution_id, i=i, sigi=sigi, fp=fp, sigfp=sigfp, highres=highres, tempdir=tempdir, log=log)
+    extend_ecalc(solution_id=solution_id, i=i, sigi=sigi, fp=fp, sigfp=sigfp, highres=highres, tempdir=tempdir)
     mtzin = solution_id + '.aniso.ecalc.mtz'
     xyzin = solution_id + '.pdb'
     mtzout = solution_id + '.acorn.mtz'
@@ -147,7 +152,7 @@ def test_solution(log, tempdir, scores, solution, test_all, acornCC_solved, acor
   solution['acornCC'] = cc
   return solution
 
-def test_solutions(log, json_file, xml_file, xmlroot, output, solutions, num_solutions,
+def test_solutions(json_file, xml_file, xmlroot, output, solutions, num_solutions,
                    test_all, acornCC_solved, acornCC_diff, i, sigi, fp, sigfp,
                    lowres, highres, solvent, tempdir, nproc):
   # this complicated arrangement ensures every time a solution is tested the function receives the latest scores
@@ -187,7 +192,6 @@ def test_solutions(log, json_file, xml_file, xmlroot, output, solutions, num_sol
       write_output({'result':result},
                   json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
   solution_tester = setup_solution_tester(scores=scores, 
-                                          log=log, 
                                           tempdir=tempdir,
                                           test_all=test_all, 
                                           acornCC_solved=acornCC_solved, 

@@ -20,9 +20,12 @@
 """
 from __future__ import print_function
 import os
+import logging
 import phaser
 from iotbx import pdb
 from fragon.utils import write_output
+
+log = logging.getLogger(__name__)
 
 class CallbackObject(object):
   def __init__(self, xml_file=None, xmlroot=None):
@@ -62,7 +65,7 @@ class CallbackObject(object):
             callback = ['Best TFZ', tfz]
             write_output({'callback':callback}, json_file=None, xml_file=self.xml_file, xmlroot=self.xmlroot, output=None)
 
-def prepare_data(mtzin, i, sigi, fp, sigfp, logfile, log):
+def prepare_data(mtzin, i, sigi, fp, sigfp, logfile):
   input = phaser.InputMR_DAT()
   input.setHKLI(mtzin)
   if i is not None and sigi is not None:
@@ -82,7 +85,7 @@ def prepare_data(mtzin, i, sigi, fp, sigfp, logfile, log):
     log.critical('Job exit status FAILURE')
     log.critical('%s ERROR : %s' % (data.ErrorName(), data.ErrorMessage()))
 
-def calculate_solvent(root, data, seqin, ncs_copies, highres, logfile, log):
+def calculate_solvent(root, data, seqin, ncs_copies, highres, logfile):
   input = phaser.InputCCA()
   input.setSPAC_HALL(data.getSpaceGroupHall())
   input.setCELL6(data.getUnitCell())
@@ -109,7 +112,7 @@ def calculate_solvent(root, data, seqin, ncs_copies, highres, logfile, log):
 
   return cca.getBestZ(), cca.getBestVM(), cca.getZ()[0], cca.getVM()[0]
 
-def run_phaser(root, xml_file, xmlroot, log, logfile, data, pdbin, copies, rms, pdbin_fixed,
+def run_phaser(root, xml_file, xmlroot, logfile, data, pdbin, copies, rms, pdbin_fixed,
                seqin, ncs_copies, phaser_solvent, sgalternative, sg_list, input_hand, tncs,
                search_lowres, search_highres, rot_peaks, rot_cluster_off,
                rot_samp, tra_samp, search_down, tfz_solved, solutions, purge,
@@ -310,7 +313,7 @@ def split_models(pdbin):
       print(selection.as_pdb_string(),'END', file=pdbfile)
   return models
 
-def run_rnp(root, xml_file, xmlroot, logfile, log, data, tncs, pdbin, models,
+def run_rnp(root, xml_file, xmlroot, logfile, data, tncs, pdbin, models,
             solutions, num_solutions, rescore_all, rescore_models, nproc):
   input = phaser.InputMR_RNP()
   # test OpenMP
@@ -374,7 +377,7 @@ def run_rnp(root, xml_file, xmlroot, logfile, log, data, tncs, pdbin, models,
     return 'No solutions'
 
 
-def place_fragment(root, xml_file, xmlroot, log, data, pdbin, copies, rms, pdbin_fixed,
+def place_fragment(root, xml_file, xmlroot, data, pdbin, copies, rms, pdbin_fixed,
                    seqin, ncs_copies, phaser_solvent, sgalternative, sg_list, input_hand, tncs,
                    search_lowres, search_highres, rot_peaks, rot_cluster_off, rot_samp, tra_samp,
                    search_down, tfz_solved, solutions, purge, rescore_strands,
@@ -388,7 +391,7 @@ def place_fragment(root, xml_file, xmlroot, log, data, pdbin, copies, rms, pdbin
   if tncs:
     log.info('\n    tNCS correction not applied')
 
-  phaser_solutions = run_phaser(root=root, xml_file=xml_file, xmlroot=xmlroot, log=log, logfile=phaser_logfile,
+  phaser_solutions = run_phaser(root=root, xml_file=xml_file, xmlroot=xmlroot, logfile=phaser_logfile,
                                 data=data, pdbin=pdbin, copies=copies, rms=rms, pdbin_fixed=pdbin_fixed,
                                 seqin=seqin, ncs_copies=ncs_copies, phaser_solvent=phaser_solvent,
                                 sgalternative=sgalternative, sg_list=sg_list, input_hand=input_hand, tncs=tncs,
@@ -412,7 +415,7 @@ def place_fragment(root, xml_file, xmlroot, log, data, pdbin, copies, rms, pdbin
       models = split_strands(pdbin, copies)
     elif rescore_models:
       models = split_models(pdbin)
-    rescored_solutions = run_rnp(root=root, xml_file=xml_file, xmlroot=xmlroot, logfile=phaser_logfile, log=log,
+    rescored_solutions = run_rnp(root=root, xml_file=xml_file, xmlroot=xmlroot, logfile=phaser_logfile,
                 data=data, tncs=tncs, pdbin=pdbin, models=models, solutions=phaser_solutions,
                 num_solutions=solutions, rescore_all=rescore_all, rescore_models=rescore_models, nproc=nproc)
 

@@ -60,7 +60,7 @@ def run():
 
    # restarting
   if args.results_json is not None:
-    restart, solutions, search, scoring, logfile = utils.setup_restart(args.results_json, log)
+    restart, solutions, search, scoring, logfile = utils.setup_restart(args.results_json)
     start_point = restart['start_point']
     run_dir = restart['run_dir']
     tempdir = restart['tempdir']
@@ -92,11 +92,11 @@ def run():
     xmlroot = None
 
   # print banner
-  utils.print_header(log=log)
+  utils.print_header()
 
   # scoring
   if start_point is None:
-    scoring = utils.define_scoring(args, log=log)
+    scoring = utils.define_scoring(args)
 
   #parallel
   if args.nproc is not None:
@@ -133,10 +133,10 @@ def run():
 
   # User supplied column labels
   if not any([args.I, args.SIGI, args.FP, args.SIGFP]): # all unset
-    data_info = data.mtz_info(mtzin, log=log)
+    data_info = data.mtz_info(mtzin)
   else:
     i, sigi, fp, sigfp = utils.get_labels(args)
-    data_info = data.mtz_info(mtzin, i=i, sigi=sigi, fp=fp, sigfp=sigfp, log=log)
+    data_info = data.mtz_info(mtzin, i=i, sigi=sigi, fp=fp, sigfp=sigfp)
 
   # check if we merged I(+)/I(-)
   if data_info['anomalous_merged']:
@@ -159,7 +159,7 @@ def run():
   log.debug('DEBUG i:%s sigi:%s fp:%s sigfp %s\n' % (i,sigi,fp,sigfp))
   data_logfile = root + '_prepare_data.log'
   log.info('Preparing data, logfile is: %s\n' % os.path.abspath(data_logfile))
-  data_array = place.prepare_data(mtzin=mtzin, i=i, sigi=sigi, fp=fp, sigfp=sigfp, logfile=data_logfile, log=log)
+  data_array = place.prepare_data(mtzin=mtzin, i=i, sigi=sigi, fp=fp, sigfp=sigfp, logfile=data_logfile)
   
   if start_point is None:
     # solvent content
@@ -177,8 +177,7 @@ def run():
                                                        seqin=search['seqin'],
                                                        ncs_copies=search['ncs_copies'],
                                                        highres=data_info['highres'],
-                                                       logfile=cca_logfile,
-                                                       log=log)
+                                                       logfile=cca_logfile)
       scoring['solvent'] = round(1.0 - (1.232/vm), 2)
       if calc_z > 1:
         calc_solvent = round(1.0 - (1.232/calc_vm), 2)
@@ -301,7 +300,7 @@ def run():
     log.debug('DEBUG lowres %s search_lowres %s highres %s search_highres %s\n' % (data_info['lowres'], search['lowres'], data_info['highres'], search['highres']))
     log.debug('DEBUG xmlfile %s xmlroot %s' % (xml_file, xmlroot))
     
-    phaser_solutions = place.place_fragment(root=root, xml_file=xml_file, xmlroot=xmlroot, log=log,                                            
+    phaser_solutions = place.place_fragment(root=root, xml_file=xml_file, xmlroot=xmlroot,                                            
                                             data=data_array,
                                             pdbin=search['pdbin'],
                                             copies=search['copies'],
@@ -354,7 +353,7 @@ def run():
 
     log.info('\nTime now: %s' % str( time.asctime(time.localtime(time.time()))))
     phaser_time = time.time()
-    time_string = utils.print_time('Time for Phaser', phaser_time - start_time, log)
+    time_string = utils.print_time('Time for Phaser', phaser_time - start_time)
     utils.write_output({'phaser_time':time_string},
                       json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
 
@@ -373,7 +372,7 @@ def run():
     acornCC_diff = acornCC_solved if data_info['highres'] <= 1.20 else scoring['acornCC_diff']
     log.debug('DEBUG acornCC_diff: %0.4f search acornCC_diff: %0.4f data highres: %0.2f\n' % (acornCC_diff, scoring['acornCC_diff'], data_info['highres']))
 
-    solutions = score.test_solutions(log=log, json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output,
+    solutions = score.test_solutions(json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output,
                                      solutions=solutions, 
                                      num_solutions=num_solutions,
                                      test_all=scoring['test_all'], 
@@ -394,7 +393,7 @@ def run():
 
     log.info('\nTime now: %s\n' % str(time.asctime(time.localtime(time.time()))))
     acorn_time = time.time()
-    time_string = utils.print_time('Time for ACORN density modification', acorn_time - phaser_time, log)
+    time_string = utils.print_time('Time for ACORN density modification', acorn_time - phaser_time)
     utils.write_output({'acorn_time':time_string},
                       json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
 
@@ -413,7 +412,7 @@ def run():
   log.info('\n\nAll done')
   log.info('Time now: %s\n' % str(time.asctime(time.localtime(time.time()))))
   end_time = time.time()
-  time_string = utils.print_time('Total time taken', end_time - start_time, log)
+  time_string = utils.print_time('Total time taken', end_time - start_time)
   utils.write_output({'total_time':time_string, 'finish_time':str(time.asctime(time.localtime(time.time())))},
                     json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
   log.info('Best solution %s.pdb , CC = %0.5f\n' % (best_solution_id, cc_best))
@@ -430,12 +429,12 @@ def run():
     data.minimtz_output(name, mtzin, acorn_mtz)
   else:
     if cc_best > 0.20000:
-      utils.write_output_files(name=name, best_solution_id=best_solution_id, mtzin=mtzin, log=log)
+      utils.write_output_files(name=name, best_solution_id=best_solution_id, mtzin=mtzin)
   if not debug:
     for tempfile in os.listdir(tempdir):
       file_path = os.path.join(tempdir, tempfile)
       if os.path.isfile(file_path):
         os.unlink(file_path)
-  utils.print_refs(log)
+  utils.print_refs()
 if __name__ == '__main__':
   run()

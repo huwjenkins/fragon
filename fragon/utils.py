@@ -25,13 +25,15 @@ import os
 import shutil
 import sys
 import errno
-# import logging
+import logging
 from iotbx import pdb
 from lxml import etree
 from fragon.data import mtz_output
 from fragon.version import __version__
 
-def print_header(log):
+log = logging.getLogger(__name__)
+
+def print_header():
   log.info('\n     -------------------------------------------------------')
   log.info('     |                                                     |')
   log.info('     |                Fragon version %10s            |'  % __version__)
@@ -125,7 +127,7 @@ def parse_command_line(args):
     sys.exit()
   return parser.parse_args(args)
 
-def setup_restart(results_json, log):
+def setup_restart(results_json):
   results = read_results_json(results_json)
   run_dir, results_file = os.path.split(results_json)
   log.debug('DEBUG results read from JSON %s' % results)
@@ -303,7 +305,7 @@ def get_labels(args):
   else:
     return i, sigi, fp, sigfp
 
-def define_scoring(args, log):
+def define_scoring(args):
   test_all = args.test_all
   if test_all:
     #hard coded
@@ -314,7 +316,7 @@ def define_scoring(args, log):
   return {'acornCC_solved':acornCC_solved, 'acornCC_diff':acornCC_diff, 'test_all':test_all}
 
 # function to format times nicely
-def print_time(process, seconds, log):
+def print_time(process, seconds):
   days = int(seconds/60/60/24)
   hours = int(seconds/60/60-24*days)
   mins= int(seconds/60-24*60*days-60*hours)
@@ -454,7 +456,7 @@ def count_tested(solutions, key):
   assert number_solutions == len(solutions)
   return solutions_tested
 
-def write_output_files(name, best_solution_id, mtzin, log):
+def write_output_files(name, best_solution_id, mtzin):
   log.info('ACORN CC greater than 0.2 suggests map is useful for autobuilding\n')
   log.info('Copying %s to %s_phaser_solution.pdb' % (best_solution_id+'.pdb', name))
   shutil.copy(best_solution_id+'.pdb', name+'_phaser_solution.pdb')
@@ -465,7 +467,7 @@ def write_output_files(name, best_solution_id, mtzin, log):
   log.info('Copying %s to %s' % (acorn_mtz, mtzout))
   mtz_output(mtzin, acorn_mtz, mtzout)
 
-def print_refs(log):
+def print_refs():
   log.info('\nIf you solve a structure with Fragon please cite:')
   log.info('\nPhaser crystallographic software')
   log.info('McCoy AJ, Grosse-Kunstleve RW, Adams PD, Winn MD, Storoni LC & Read RJ.')
