@@ -33,7 +33,6 @@ log = logging.getLogger(__name__)
 class setup_solution_tester(object):
   def __init__(self, scores, tempdir, test_all, acornCC_solved, acornCC_diff, i, sigi, fp, sigfp, lowres, highres, solvent):
     self.scores = scores
-    self.log = logging.getLogger(__name__)
     self.tempdir = tempdir
     self.test_all = test_all
     self.acornCC_solved = acornCC_solved
@@ -52,11 +51,13 @@ class setup_solution_tester(object):
         try:
           self.scores.append(read_results_json(acorn_json)['acornCC'])
         except IOError: 
+          self.log = logging.getLogger(__name__)
           self.log.debug('DEBUG Error reading file: %s' % acorn_json)
     elif not_definitive(self.scores, self.acornCC_solved, self.acornCC_diff): # avoid needless file reads
       try:
         self.scores.extend([ read_results_json(acorn_json)['acornCC'] for acorn_json in glob.glob('*.acorn.json') if read_results_json(acorn_json)['acornCC'] not in self.scores])
       except IOError:
+        self.log = logging.getLogger(__name__)
         self.log.debug('DEBUG Error reading file: %s' % acorn_json)
     return test_solution(tempdir=self.tempdir, 
                          scores=self.scores, 
