@@ -45,7 +45,7 @@ def print_header():
 # read command line arguments
 def parse_command_line(args):
   parser = argparse.ArgumentParser( prog='fragon', description='Places fragments with Phaser followed by density modification with ACORN')
-  optional = parser.add_argument_group('additional options')
+  optional = parser.add_argument_group('Options')
   optional.add_argument('--mtz', required=False, default=None, type=str, metavar='data.mtz',
                         help='input MTZ file')
   optional.add_argument('--log', required=False, default=None, type=str, metavar='Fragon_.log',
@@ -153,7 +153,7 @@ def setup_restart(results_json):
         os.unlink(file_path)
   return restart, results['solutions'], results['search'], results['scoring'], logfile
 
-def setup_run(mtzin, seqin, pdbin, pdbin_fixed):
+def setup_run(mtzin, search):
   run_dir_base='Fragon_'
   run_number = 1
   while run_number <= 100:
@@ -179,15 +179,20 @@ def setup_run(mtzin, seqin, pdbin, pdbin_fixed):
 
   # copy files
   shutil.copy(mtzin, run_dir)
-  if seqin is not None:
-    shutil.copy(seqin, run_dir)
-  if pdbin is not None:
-    if pdbin[:-4].split('-')[0] == 'Helix' and pdbin[:-4].split('-')[1] in [str(n) for n in range(1,71)]:
-      shutil.move(pdbin, run_dir)
+  # relative paths on command line will break once in run directory
+  if search['seqin'] is not None:
+    shutil.copy(search['seqin'], run_dir)
+    search['seqin'] = os.path.basename(search['seqin'])
+  if search['pdbin'] is not None:
+    if search['pdbin'][:-4].split('-')[0] == 'Helix' and search['pdbin'][:-4].split('-')[1] in [str(n) for n in range(1,71)]:
+      shutil.move(search['pdbin'], run_dir)
     else:
-      shutil.copy(pdbin, run_dir)
-  if pdbin_fixed is not None:
-    shutil.copy(pdbin_fixed, run_dir)
+      shutil.copy(search['pdbin'], run_dir)
+      search['pdbin'] = os.path.basename(search['pdbin'])
+      
+  if search['pdbin_fixed'] is not None:
+    shutil.copy(search['pdbin_fixed'], run_dir)
+    search['pdbin_fixed'] = os.path.basename(search['seqin']) 
   return run_dir, tempdir
 
 def define_search(args):
