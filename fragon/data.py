@@ -20,13 +20,16 @@
 """
 import sys
 import shutil
+import logging
 from iotbx import mtz
 from cctbx.miller import array_info
 # for anisotropy correction
 import phaser
 import clipper
 
-def mtz_info(mtzin, i=None, sigi=None, fp=None, sigfp=None, log=None):
+log = logging.getLogger(__name__)
+
+def mtz_info(mtzin, i=None, sigi=None, fp=None, sigfp=None):
   mtz_file = mtz.object(mtzin)
   mtz_low_res = mtz_file.max_min_resolution()[0]
   mtz_high_res = mtz_file.max_min_resolution()[1]
@@ -170,7 +173,7 @@ def tidy_data(solution_id, fp, sigfp):
   mtzout = solution_id + '.F.mtz'
   fobs_mtz.mtz_object().write(mtzout)
 
-def aniso_correct(solution_id, mtzin, i, sigi, fp, sigfp, logfile, log):
+def aniso_correct(solution_id, mtzin, i, sigi, fp, sigfp, logfile):
   from place import CallbackObject
   input = phaser.InputMR_DAT()
   input.setHKLI(mtzin)
@@ -201,7 +204,7 @@ def aniso_correct(solution_id, mtzin, i, sigi, fp, sigfp, logfile, log):
 
 # This does anisotropy correction with Phaser, extends to 1.0 A (or completes to highres of input if higher) and calcs Es
 
-def extend_ecalc(solution_id, i, sigi, fp, sigfp, highres, tempdir, log):
+def extend_ecalc(solution_id, i, sigi, fp, sigfp, highres, tempdir):
   if i is not None and sigi is not None:
     have_intensities = True
   else:
@@ -217,7 +220,7 @@ def extend_ecalc(solution_id, i, sigi, fp, sigfp, highres, tempdir, log):
   sigfp = 'SIGF'
   aniso_logfile = solution_id + '_anisotropy_correction.log'
   tempfiles.append(aniso_logfile)
-  aniso_correct(solution_id, mtzin, i, sigi, fp, sigfp, aniso_logfile, log)
+  aniso_correct(solution_id, mtzin, i, sigi, fp, sigfp, aniso_logfile)
   if have_intensities:
     i_iso = i + '_ISO'
     sigi_iso = sigi + '_ISO'
