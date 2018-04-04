@@ -394,7 +394,15 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
       print(json.dumps(output, sort_keys=True, indent=2, separators=(',', ': ')), file=jsonfile)
     if os.path.exists(json_file):
       os.remove(json_file)
-    os.rename(temp_filename, json_file)
+    try:
+      os.rename(temp_filename, json_file)
+    except WindowsError: 
+      if os.path.exists(json_file):
+        os.rename(json_file, temp_filename + '.2')
+        os.rename(temp_filename, json_file)
+        os.remove(temp_filename + '.2')
+      else:
+        os.rename(temp_filename, json_file)
     return output
   elif xmlroot is None:
     xmlroot = etree.Element('Fragon')
