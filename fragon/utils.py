@@ -442,8 +442,15 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
     with open(temp_filename, 'w') as xmlfile: xmlfile.write(etree.tostring(xmlroot, pretty_print=True))
     if os.path.exists(xml_file):
       os.remove(xml_file)
-    os.rename(temp_filename, xml_file)
-
+    try:
+      os.rename(temp_filename, xml_file)
+    except WindowsError: 
+      if os.path.exists(xml_file):
+        os.rename(xml_file, temp_filename + '.2')
+        os.rename(temp_filename, xml_file)
+        os.remove(temp_filename + '.2')
+      else:
+        os.rename(temp_filename, xml_file)
 def read_results_json(results_json):
   with open(results_json, 'r') as results:
     loaded_results = json.load(results)
