@@ -222,6 +222,7 @@ def extend_ecalc(solution_id, i, sigi, fp, sigfp, highres, tempdir, log):
     i_iso = i + '_ISO'
     sigi_iso = sigi + '_ISO'
     massage_data(solution_id, i_iso, sigi_iso)
+    tempfiles.append(solution_id + '.aniso.mtz')
   else:
     tempfiles.append(mtzin)
   # extend

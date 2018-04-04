@@ -113,8 +113,11 @@ def run():
   log.info('Process ID: %s\n' % os.getpid())
 
   # set up versioned working directory
+  log.debug('DEBUG inital: mtzin %s, search[seqin] %s, search[pdbin] %s, search[pdbin_fixed] %s' % (mtzin, search['seqin'], search['pdbin'], search['pdbin_fixed']))
   if run_dir is None and not i2:
-    run_dir, tempdir = utils.setup_run(mtzin=mtzin, seqin=search['seqin'], pdbin=search['pdbin'], pdbin_fixed=search['pdbin_fixed'])
+    run_dir, tempdir = utils.setup_run(mtzin=mtzin, search=search)
+    mtzin = os.path.basename(mtzin)
+    log.debug('DEBUG after setup_run: mtzin %s, search[seqin] %s, search[pdbin] %s, search[pdbin_fixed] %s' % (mtzin, search['seqin'], search['pdbin'], search['pdbin_fixed']))
   elif i2:
     run_dir = os.path.abspath(os.getcwd())
     os.mkdir('TEMP')
@@ -125,7 +128,7 @@ def run():
   log.debug('DEBUG start_point : %s  \n' % start_point)
   log.info('Working directory is: %s\n' % run_dir)
   os.chdir(run_dir)
-
+  
   if args.name is None:
     log.info('Filename root set to %s override this with --name option\n' % name)
   else:
