@@ -397,12 +397,13 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
     try:
       os.rename(temp_filename, json_file)
     except WindowsError: 
-      if os.path.exists(json_file):
-        os.rename(json_file, temp_filename + '.2')
-        os.rename(temp_filename, json_file)
-        os.remove(temp_filename + '.2')
-      else:
-        os.rename(temp_filename, json_file)
+      for attempt in range(10):
+        try:
+          os.rename(temp_filename, json_file)
+          log.info('Tempfile rename Error: %s written on re-try %d' % (json_file, attempt + 1))
+          break
+        except WindowsError:
+          attempt += 1
     return output
   elif xmlroot is None:
     xmlroot = etree.Element('Fragon')
@@ -445,12 +446,13 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
     try:
       os.rename(temp_filename, xml_file)
     except WindowsError: 
-      if os.path.exists(xml_file):
-        os.rename(xml_file, temp_filename + '.2')
-        os.rename(temp_filename, xml_file)
-        os.remove(temp_filename + '.2')
-      else:
-        os.rename(temp_filename, xml_file)
+      for attempt in range(10):
+        try:
+          os.rename(temp_filename, xml_file)
+          log.info('Tempfile rename Error: %s written on re-try %d' % (xml_file, attempt + 1))
+          break
+        except WindowsError:
+          attempt += 1
 def read_results_json(results_json):
   with open(results_json, 'r') as results:
     loaded_results = json.load(results)
