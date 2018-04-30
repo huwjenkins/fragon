@@ -18,6 +18,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU Lesser General Public License for more details.
 """
+from __future__ import print_function
 import sys
 import shutil
 import logging
@@ -25,7 +26,6 @@ from iotbx import mtz
 from cctbx.miller import array_info
 # for anisotropy correction
 import phaser
-import clipper
 
 log = logging.getLogger(__name__)
 
@@ -230,59 +230,46 @@ def extend_ecalc(solution_id, i, sigi, fp, sigfp, highres, tempdir):
     tempfiles.append(mtzin)
   # extend
   if highres > 1.0:
-    highres = 1.0
+    highres = 1.00000
   if have_intensities:
     ipfile = solution_id + '.french-wilson.mtz'
     ipfile_fiso = solution_id + '.fiso.mtz'
   else:
     ipfile = solution_id + '.aniso.mtz'
-  # set up Clipper data objects
-  mtzin = clipper.CCP4MTZfile()
-  mtzin.open_read(ipfile)
-  sg = mtzin.spacegroup()
-  cell = mtzin.cell()
-  reso = clipper.Resolution(highres)
-  hkls = clipper.HKL_info(sg, cell, reso, True)
-  fsig = clipper.HKL_data_F_sigF_float(hkls)
-  fsigiso = clipper.HKL_data_F_sigF_float(hkls)
-  # read data
-  mtzin.import_hkl_data(fsig, '*/*/[F, SIGF]')
-  if not have_intensities:
-    mtzin.import_hkl_data(fsigiso, '*/*/[F_ISO, SIGF_ISO]')
-    tempfiles.append(ipfile)
-  mtzin.close_read()
+  mtz_file = mtz.object(ipfile)
+  miller_arrays = mtz_file.as_miller_arrays()
+  for array in miller_arrays:
+    if str(array.info().labels) == "['F', 'SIGF']":
+      fobs = array 
+    elif str(array.info().labels) == "['F_ISO', 'SIGF_ISO']":
+      fiso = array
   if have_intensities:
-    mtzin_fiso = clipper.CCP4MTZfile()
-    mtzin_fiso.open_read(ipfile_fiso)
-    mtzin_fiso.import_hkl_data(fsigiso, '*/*/[F_ISO, SIGF_ISO]')
-    mtzin_fiso.close_read()
+    mtz_file = mtz.object(ipfile_fiso)
+    miller_arrays = mtz_file.as_miller_arrays()
+    for array in miller_arrays:
+      if str(array.info().labels) == "['F_ISO', 'SIGF_ISO']":
+        fiso = array
     tempfiles.append(ipfile_fiso)
+  else:
+    tempfiles.append(ipfile)
+  
+  # Extend. Extended reflections have F=0.0 SIGF=0.0 which means the iotbx mtz reader will treat them as missing.
+  fobs = fobs.complete_array(d_min_tolerance=1e-06, d_min=highres, d_max=None, new_data_value=0.0, new_sigmas_value=0.0)    
   # Calculate Es from F_ISO
-  esig = clipper.HKL_data_E_sigE_float(hkls)
-  esig.compute_from_fsigf(fsigiso)
-  # now calculate scaling
-  nparm = 12 # as in cecalc
-  initial_params = clipper.DoubleVector(nparm, 1.0)
-  basis_f = clipper.BasisFn_spline(esig, nparm, 2.0)
-  target_f = clipper.TargetFn_scaleEsq_E_sigE(esig)
-  escale = clipper.ResolutionFn(hkls, basis_f, target_f, initial_params)
-  # apply scaling
-  esig.scaleBySqrtResolution(escale)
+  fiso.setup_binner(reflections_per_bin=200)
+  eiso = fiso.quasi_normalize_structure_factors().quasi_normalized_as_normalized()
   # write output
-  mtzout = clipper.CCP4MTZfile()
+  mtzout = fobs.as_mtz_dataset(column_root_label='F')
+  mtzout.add_miller_array(fiso, column_root_label='F_ISO')
+  mtzout.add_miller_array(eiso, column_root_label='E_ISO')
   opfile = solution_id+'.aniso.ecalc.mtz'
-  mtzout.open_write(opfile)
-  mtzout.export_hkl_info(fsig.hkl_info())
-  mtzout.export_hkl_data(fsig, '*/*/[F, SIGF]')
-  mtzout.export_hkl_data(fsigiso, '*/*/[F_ISO, SIGF_ISO]')
-  mtzout.export_hkl_data(esig, '*/*/[E_ISO, SIGE_ISO]')
-  mtzout.close_write()
+  mtzout.mtz_object().write(opfile)
 # cleanup
   for file in tempfiles:
     shutil.move(file,tempdir)
 
 
-def mtz_output(mtzin, acorn_mtz, mtzout):
+def mtz_output(mtzin, acorn_mtz, mtzout=None, minimtz_phifom=None, minimtz_fphi=None):
   freer = None
   freer_labels = ['FreeR_flag', 'FREE', 'Free']
   mtz_file = mtz.object(mtzin)
@@ -304,83 +291,43 @@ def mtz_output(mtzin, acorn_mtz, mtzout):
        phi = array
     elif str(array.info().labels) == "['WTOUT']":
       fom = array
-  if freer is not None:
-    # catch situations where input and solution spacegroups differ
-    if freer.space_group() != fobs.space_group():
-      freer = freer.customized_copy(space_group_info=fobs.space_group_info())
-    combined_mtz = freer.as_mtz_dataset(column_root_label='FreeR_flag')
-    combined_mtz.add_miller_array(fobs, column_root_label='F')
+  if minimtz_phifom is None and minimtz_fphi is None:
+    if freer is not None:
+      # catch situations where input and solution spacegroups differ
+      if freer.space_group() != fobs.space_group():
+        freer = freer.customized_copy(space_group_info=fobs.space_group_info())
+      combined_mtz = freer.as_mtz_dataset(column_root_label='FreeR_flag')
+      combined_mtz.add_miller_array(fobs, column_root_label='F')
+    else:
+      combined_mtz = fobs.as_mtz_dataset(column_root_label='F')
+    combined_mtz.add_miller_array(phi, column_root_label='PHI', column_types='P')
+    combined_mtz.add_miller_array(fom, column_root_label='FOM', column_types='W')
   else:
-    combined_mtz = fobs.as_mtz_dataset(column_root_label='F')
-  combined_mtz.add_miller_array(phi, column_root_label='PHI', column_types='P')
-  combined_mtz.add_miller_array(fom, column_root_label='FOM', column_types='W')
+    fobs = fobs.map_to_asu()
+    fobs, phi_fobs = fobs.common_sets(other=phi.map_to_asu())
+    fobs, fom_fobs = fobs.common_sets(other=fom.map_to_asu())
+    phifom = phi_fobs.as_mtz_dataset(column_root_label='PHI', column_types='P')
+    phifom.add_miller_array(fom_fobs, column_root_label='FOM', column_types='W')
+    phifom.mtz_object().write(minimtz_phifom)
   info = fiso.info()
   fiso = fiso.map_to_asu().set_info(info)
   fiso, fom = fiso.common_sets(other=fom.map_to_asu())
   f = fiso * fom
   f, phi = f.common_sets(other=phi.map_to_asu())
   map_coeffs = f.phase_transfer(phi, deg=True).customized_copy(sigmas=None).set_info(info)
-  info = array_info(labels=['FWT', 'PHWT'])
-  map_coeffs.set_info(info)
-  combined_mtz.add_miller_array(map_coeffs, column_root_label='FWT')
-  combined_mtz = combined_mtz.mtz_object()
-  for column in combined_mtz.columns():
-    if column.label()=='PHIFWT':
-      column.set_label('PHWT')
-
-  combined_mtz.write(mtzout)
-
-def minimtz_output(name, mtzin, acorn_mtz):
-  mtzref = clipper.CCP4MTZfile()
-  mtzphifom = clipper.CCP4MTZfile()
-  mtzfphi = clipper.CCP4MTZfile()
-  hkls_ref = clipper.HKL_info()
-  # open the file from Phaser that (may have been F-W and) has been corrected for anisotropy
-  mtzref.open_read( mtzin )
-  sg = mtzref.spacegroup()
-  cell = mtzref.cell()
-  mtzref.import_hkl_info(hkls_ref, False)
-  fsig_ref = clipper.HKL_data_F_sigF_float(hkls_ref)
-  mtzref.import_hkl_data(fsig_ref, '*/*/[F_ISO,SIGF_ISO]')
-  mtzref.close_read()
-
-  mtzacorn = clipper.CCP4MTZfile()
-  #  read f_iso, and phi/fom from acorn
-  mtzacorn.open_read( acorn_mtz )
-  hkls = clipper.HKL_info()
-  mtzacorn.import_hkl_info(hkls)
-  reso = mtzacorn.resolution()
-  fsigiso = clipper.HKL_data_F_sigF_float(hkls)
-  phifom = clipper.HKL_data_Phi_fom_float(hkls)
-  mtzacorn.import_hkl_data(fsigiso, '*/*/[F_ISO,SIGF_ISO]')
-  mtzacorn.import_hkl_data(phifom, '*/*/[PHIOUT,WTOUT]')
-  mtzacorn.close_read()
-
-  #  create a list of hkls present in both unextended and extended mtz
-  matched = clipper.HKLVector()
-  hkls_matched = clipper.HKL_info(sg, cell, reso, False)
-  clipper.PopulateMatchesF_sigF_float(fsig_ref, fsigiso, matched)
-  hkls_matched.add_hkl_list(matched)
-  fsigiso_out = clipper.HKL_data_F_sigF_float(hkls_matched)
-  phifom_out = clipper.HKL_data_Phi_fom_float(hkls_matched)
-  fphi_out = clipper.HKL_data_F_phi_float(hkls_matched)
-
-  # and copy data for non-missing reflections
-  clipper.CopyIfF_sigFRefNotMissingF_sigF_float(fsigiso, fsigiso_out, fsig_ref)
-  clipper.CopyIfF_sigFRefNotMissingPhi_fom_float(phifom, phifom_out, fsig_ref)
-
-  # calculate map coefficients
-  fphi_out.compute_from_fsigf_phifom(fsigiso_out, phifom_out)
-
-  # write out mini-MTZs
-  acorn_phases = name + '_phsout_fragon.mtz'
-  map_coeffs = name + '_fphiout_fragon.mtz'
-
-  mtzphifom.open_write(acorn_phases)
-  mtzphifom.export_hkl_info(phifom_out.hkl_info())
-  mtzphifom.export_hkl_data(phifom_out, '*/*/[PHI,FOM]')
-  mtzphifom.close_write()
-  mtzfphi.open_write(map_coeffs)
-  mtzfphi.export_hkl_info(fphi_out.hkl_info())
-  mtzfphi.export_hkl_data(fphi_out, '*/*/[F,PHI]')
-  mtzfphi.close_write()
+  if minimtz_phifom is None and minimtz_fphi is None:
+    info = array_info(labels=['FWT', 'PHWT'])
+    map_coeffs.set_info(info)
+    combined_mtz.add_miller_array(map_coeffs, column_root_label='FWT')
+    combined_mtz = combined_mtz.mtz_object()
+    for column in combined_mtz.columns():
+      if column.label()=='PHIFWT':
+        column.set_label('PHWT')
+    combined_mtz.write(mtzout)
+  else:
+    fphi = map_coeffs.as_mtz_dataset(column_root_label='F')
+    fphi_mtz = fphi.mtz_object()
+    for column in fphi_mtz.columns():
+      if column.label()=='PHIF':
+        column.set_label('PHI')
+    fphi_mtz.write(minimtz_fphi)

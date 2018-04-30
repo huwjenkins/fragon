@@ -487,7 +487,7 @@ def write_output_files(name, best_solution_id, mtzin):
   acorn_mtz = best_solution_id+'.acorn.mtz'
   mtzout = name + '_acorn_phases.mtz'
   log.info('Copying %s to %s' % (acorn_mtz, mtzout))
-  mtz_output(mtzin, acorn_mtz, mtzout)
+  mtz_output(mtzin=mtzin, acorn_mtz=acorn_mtz, mtzout=mtzout)
 
 def print_refs():
   log.info('\nIf you solve a structure with Fragon please cite:')
