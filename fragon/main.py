@@ -422,14 +422,13 @@ def run():
   utils.write_output({'best_solution_id':best_solution_id, 'cc_best':cc_best},
                     json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
   if i2:
-    if i is not None and sigi is not None:
-      mtzin = os.path.join(tempdir, best_solution_id + '.fiso.mtz')
-    else:
-      mtzin = os.path.join(tempdir, best_solution_id + '.aniso.mtz')
     acorn_mtz = best_solution_id + '.acorn.mtz'
     phaser_pdb = best_solution_id + '.pdb'
     shutil.copy(phaser_pdb, name + '_xyzout_fragon.pdb')
-    data.minimtz_output(name, mtzin, acorn_mtz)
+    minimtz_phifom = name + '_phsout_fragon.mtz'
+    minimtz_fphi = name + '_fphiout_fragon.mtz'
+    data.mtz_output(mtzin=mtzin, acorn_mtz=acorn_mtz, mtzout=None, minimtz_phifom=minimtz_phifom, minimtz_fphi=minimtz_fphi)
+    
   else:
     if cc_best > 0.20000:
       utils.write_output_files(name=name, best_solution_id=best_solution_id, mtzin=mtzin)
