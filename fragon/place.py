@@ -72,13 +72,10 @@ def prepare_data(mtzin, i, sigi, fp, sigfp, logfile):
     input.setLABI_I_SIGI(i, sigi)
   else:
     input.setLABI_F_SIGF(fp, sigfp)
-  output = phaser.Output()
-  data_log = open(logfile, 'w')
-  output_object = CallbackObject(None, None)
-  output.setPhenixPackageCallback(output_object)
-  output.set_file_object(data_log)
-  data = phaser.runMR_DAT(input, output)
-  data_log.close()
+  input.setMUTE(True)
+  data = phaser.runMR_DAT(input)
+  with open(logfile, 'w') as data_log:
+    print(data.logfile(), file=data_log)  
   if data.Success():
     return data
   else:
@@ -91,13 +88,10 @@ def calculate_solvent(root, data, seqin, ncs_copies, highres, logfile):
   input.setCELL6(data.getUnitCell())
   input.addCOMP_PROT_SEQ_NUM(seqin, ncs_copies)
   input.setRESO(highres, 10000)
-  output = phaser.Output()
-  cca_log = open(logfile, 'w')
-  output_object = CallbackObject(None, None)
-  output.setPhenixPackageCallback(output_object)
-  output.set_file_object(cca_log)
-  cca = phaser.runCCA(input, output)
-  cca_log.close()
+  input.setMUTE(True)
+  cca = phaser.runCCA(input)
+  with open(logfile, 'w') as cca_log:
+    print(data.logfile(), file=cca_log)  
   # check if solvent content is higher than average
   if cca.getBestZ() > 1:
     log.warning ('*** Warning solvent content estimated by Phaser is %0.2f' % (1.0 - 1.232/cca.getBestVM()))
