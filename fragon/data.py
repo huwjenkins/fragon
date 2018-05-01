@@ -181,12 +181,10 @@ def aniso_correct(solution_id, mtzin, i, sigi, fp, sigfp, logfile):
     input.setLABI_I_SIGI(i, sigi)
   else:
     input.setLABI_F_SIGF(fp, sigfp)
-  output = phaser.Output()
-  aniso_log = open(logfile, 'w')
-  output_object = CallbackObject(None, None)
-  output.setPhenixPackageCallback(output_object)
-  output.set_file_object(aniso_log)
-  data = phaser.runMR_DAT(input, output)
+  input.setMUTE(True)
+  data = phaser.runMR_DAT(input)
+  with open(logfile, 'w') as aniso_log:
+    print(data.logfile(), file=aniso_log)
   mtzout = solution_id + '.aniso'
   input = phaser.InputANO()
   input.setSPAC_HALL(data.getSpaceGroupHall())
@@ -194,8 +192,10 @@ def aniso_correct(solution_id, mtzin, i, sigi, fp, sigfp, logfile):
   input.setREFL_DATA(data.getDATA())
   input.setHKLI(mtzin)
   input.setROOT(mtzout)
-  aniso = phaser.runANO(input, output)
-  aniso_log.close()
+  input.setMUTE(True)
+  aniso = phaser.runANO(input)
+  with open(logfile, 'a') as aniso_log:
+    print(aniso.logfile(), file=aniso_log)
   if data.Success():
     success = True
   else:
