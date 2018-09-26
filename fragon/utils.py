@@ -33,6 +33,10 @@ from fragon.version import __version__
 
 log = logging.getLogger(__name__)
 
+def print_version():
+  import fragon
+  log.info('Fragon version %s installed in %s' %(__version__, os.path.split(fragon.__file__)[0]))
+
 def print_header():
   log.info('\n     -------------------------------------------------------')
   log.info('     |                                                     |')
@@ -122,6 +126,8 @@ def parse_command_line(args):
                         help='turn on debugging messages')
   optional.add_argument('--nproc', required=False, type=int, metavar='1', default=1,
                         help='no. threads')
+  optional.add_argument('--version', required=False, action='store_true', default=False,
+                        help='print version')
   if len(args) == 0:
     parser.print_usage()
     sys.exit()
