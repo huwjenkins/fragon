@@ -43,6 +43,10 @@ def run():
   log.addHandler(ch)
 
   args = utils.parse_command_line(sys.argv[1:])
+  
+  if args.version:
+    utils.print_version()
+    sys.exit()
 
   # are we run from CCP4i2?
   i2 = args.i2
