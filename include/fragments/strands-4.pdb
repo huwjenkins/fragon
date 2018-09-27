@@ -1,0 +1,121 @@
+REMARK MODEL 1: PDB strand-130_130-4.pdb, MODEL'', CHAIN A
+REMARK MODEL 2: PDB strand-125_120-4.pdb, MODEL'', CHAIN A
+REMARK MODEL 3: PDB strand-135_135-4.pdb, MODEL'', CHAIN A
+REMARK MODEL 4: PDB strand-140_135-4.pdb, MODEL'', CHAIN A
+REMARK MODEL 5: PDB strand-120_115-4.pdb, MODEL'', CHAIN A
+MODEL        1
+ATOM      1  N   ALA A   1       0.587  -5.409  -3.283  1.00  1.00           N
+ATOM      2  CA  ALA A   1       0.940  -3.985  -3.186  1.00  1.00           C
+ATOM      3  C   ALA A   1       0.104  -3.312  -2.097  1.00  1.00           C
+ATOM      4  O   ALA A   1      -1.094  -3.558  -2.225  1.00  1.00           O
+ATOM      5  CB  ALA A   1       0.678  -3.301  -4.495  1.00  1.00           C
+ATOM      6  N   ALA A   2       0.774  -2.589  -1.205  1.00  1.00           N
+ATOM      7  CA  ALA A   2       0.096  -1.896  -0.116  1.00  1.00           C
+ATOM      8  C   ALA A   2       0.530  -0.436  -0.036  1.00  1.00           C
+ATOM      9  O   ALA A   2       1.755  -0.323  -0.042  1.00  1.00           O
+ATOM     10  CB  ALA A   2       0.363  -2.628   1.192  1.00  1.00           C
+ATOM     11  N   ALA A   3      -0.445   0.465   0.024  1.00  1.00           N
+ATOM     12  CA  ALA A   3      -0.166   1.893   0.103  1.00  1.00           C
+ATOM     13  C   ALA A   3      -0.947   2.546   1.239  1.00  1.00           C
+ATOM     14  O   ALA A   3      -2.141   2.252   1.201  1.00  1.00           O
+ATOM     15  CB  ALA A   3      -0.483   2.545  -1.236  1.00  1.00           C
+ATOM     16  N   ALA A   4      -0.245   3.307   2.072  1.00  1.00           N
+ATOM     17  CA  ALA A   4      -0.871   3.988   3.199  1.00  1.00           C
+ATOM     18  C   ALA A   4      -0.492   5.466   3.231  1.00  1.00           C
+ATOM     19  O   ALA A   4       0.724   5.626   3.137  1.00  1.00           O
+ATOM     20  CB  ALA A   4      -0.482   3.286   4.493  1.00  1.00           C
+TER
+ENDMDL
+MODEL        2
+ATOM      1  N   ALA A   1       0.591  -5.336  -3.179  1.00  1.00           N
+ATOM      2  CA  ALA A   1       0.871  -3.893  -3.167  1.00  1.00           C
+ATOM      3  C   ALA A   1       0.069  -3.214  -2.055  1.00  1.00           C
+ATOM      4  O   ALA A   1      -1.142  -3.365  -2.209  1.00  1.00           O
+ATOM      5  CB  ALA A   1       0.490  -3.285  -4.484  1.00  1.00           C
+ATOM      6  N   ALA A   2       0.775  -2.584  -1.123  1.00  1.00           N
+ATOM      7  CA  ALA A   2       0.133  -1.897  -0.009  1.00  1.00           C
+ATOM      8  C   ALA A   2       0.579  -0.441   0.072  1.00  1.00           C
+ATOM      9  O   ALA A   2       1.795  -0.343   0.232  1.00  1.00           O
+ATOM     10  CB  ALA A   2       0.433  -2.642   1.286  1.00  1.00           C
+ATOM     11  N   ALA A   3      -0.380   0.474  -0.039  1.00  1.00           N
+ATOM     12  CA  ALA A   3      -0.088   1.901   0.020  1.00  1.00           C
+ATOM     13  C   ALA A   3      -0.920   2.590   1.097  1.00  1.00           C
+ATOM     14  O   ALA A   3      -2.126   2.469   0.888  1.00  1.00           O
+ATOM     15  CB  ALA A   3      -0.326   2.523  -1.350  1.00  1.00           C
+ATOM     16  N   ALA A   4      -0.242   3.195   2.066  1.00  1.00           N
+ATOM     17  CA  ALA A   4      -0.916   3.889   3.155  1.00  1.00           C
+ATOM     18  C   ALA A   4      -0.438   5.333   3.268  1.00  1.00           C
+ATOM     19  O   ALA A   4       0.770   5.399   3.483  1.00  1.00           O
+ATOM     20  CB  ALA A   4      -0.694   3.127   4.455  1.00  1.00           C
+TER
+ENDMDL
+MODEL        3
+ATOM      1  N   ALA A   1       0.605  -5.470  -3.304  1.00  1.00           N
+ATOM      2  CA  ALA A   1       0.943  -4.042  -3.204  1.00  1.00           C
+ATOM      3  C   ALA A   1       0.119  -3.387  -2.095  1.00  1.00           C
+ATOM      4  O   ALA A   1      -1.063  -3.724  -2.143  1.00  1.00           O
+ATOM      5  CB  ALA A   1       0.647  -3.353  -4.503  1.00  1.00           C
+ATOM      6  N   ALA A   2       0.780  -2.578  -1.273  1.00  1.00           N
+ATOM      7  CA  ALA A   2       0.113  -1.891  -0.174  1.00  1.00           C
+ATOM      8  C   ALA A   2       0.535  -0.427  -0.101  1.00  1.00           C
+ATOM      9  O   ALA A   2       1.752  -0.296  -0.225  1.00  1.00           O
+ATOM     10  CB  ALA A   2       0.407  -2.619   1.131  1.00  1.00           C
+ATOM     11  N   ALA A   3      -0.442   0.457   0.077  1.00  1.00           N
+ATOM     12  CA  ALA A   3      -0.173   1.888   0.163  1.00  1.00           C
+ATOM     13  C   ALA A   3      -0.944   2.525   1.314  1.00  1.00           C
+ATOM     14  O   ALA A   3      -2.113   2.143   1.347  1.00  1.00           O
+ATOM     15  CB  ALA A   3      -0.515   2.547  -1.167  1.00  1.00           C
+ATOM     16  N   ALA A   4      -0.263   3.368   2.082  1.00  1.00           N
+ATOM     17  CA  ALA A   4      -0.882   4.045   3.215  1.00  1.00           C
+ATOM     18  C   ALA A   4      -0.512   5.524   3.245  1.00  1.00           C
+ATOM     19  O   ALA A   4       0.689   5.698   3.040  1.00  1.00           O
+ATOM     20  CB  ALA A   4      -0.476   3.344   4.506  1.00  1.00           C
+TER
+ENDMDL
+MODEL        4
+ATOM      1  N   ALA A   1       0.652  -5.519  -3.254  1.00  1.00           N
+ATOM      2  CA  ALA A   1       0.889  -4.068  -3.223  1.00  1.00           C
+ATOM      3  C   ALA A   1       0.121  -3.438  -2.060  1.00  1.00           C
+ATOM      4  O   ALA A   1      -1.031  -3.863  -1.990  1.00  1.00           O
+ATOM      5  CB  ALA A   1       0.427  -3.445  -4.507  1.00  1.00           C
+ATOM      6  N   ALA A   2       0.790  -2.557  -1.324  1.00  1.00           N
+ATOM      7  CA  ALA A   2       0.174  -1.885  -0.186  1.00  1.00           C
+ATOM      8  C   ALA A   2       0.588  -0.418  -0.122  1.00  1.00           C
+ATOM      9  O   ALA A   2       1.797  -0.277  -0.305  1.00  1.00           O
+ATOM     10  CB  ALA A   2       0.540  -2.622   1.095  1.00  1.00           C
+ATOM     11  N   ALA A   3      -0.384   0.457   0.113  1.00  1.00           N
+ATOM     12  CA  ALA A   3      -0.122   1.889   0.200  1.00  1.00           C
+ATOM     13  C   ALA A   3      -0.934   2.532   1.318  1.00  1.00           C
+ATOM     14  O   ALA A   3      -2.102   2.147   1.313  1.00  1.00           O
+ATOM     15  CB  ALA A   3      -0.417   2.537  -1.146  1.00  1.00           C
+ATOM     16  N   ALA A   4      -0.281   3.382   2.104  1.00  1.00           N
+ATOM     17  CA  ALA A   4      -0.942   4.064   3.210  1.00  1.00           C
+ATOM     18  C   ALA A   4      -0.482   5.515   3.316  1.00  1.00           C
+ATOM     19  O   ALA A   4       0.740   5.615   3.208  1.00  1.00           O
+ATOM     20  CB  ALA A   4      -0.680   3.302   4.502  1.00  1.00           C
+TER
+ENDMDL
+MODEL        5
+ATOM      1  N   ALA A   1       0.576  -5.270  -3.144  1.00  1.00           N
+ATOM      2  CA  ALA A   1       0.863  -3.828  -3.144  1.00  1.00           C
+ATOM      3  C   ALA A   1       0.059  -3.135  -2.043  1.00  1.00           C
+ATOM      4  O   ALA A   1      -1.151  -3.198  -2.253  1.00  1.00           O
+ATOM      5  CB  ALA A   1       0.491  -3.231  -4.469  1.00  1.00           C
+ATOM      6  N   ALA A   2       0.764  -2.588  -1.058  1.00  1.00           N
+ATOM      7  CA  ALA A   2       0.119  -1.897   0.053  1.00  1.00           C
+ATOM      8  C   ALA A   2       0.567  -0.441   0.131  1.00  1.00           C
+ATOM      9  O   ALA A   2       1.765  -0.346   0.392  1.00  1.00           O
+ATOM     10  CB  ALA A   2       0.414  -2.640   1.349  1.00  1.00           C
+ATOM     11  N   ALA A   3      -0.372   0.474  -0.087  1.00  1.00           N
+ATOM     12  CA  ALA A   3      -0.076   1.900  -0.042  1.00  1.00           C
+ATOM     13  C   ALA A   3      -0.907   2.602   1.027  1.00  1.00           C
+ATOM     14  O   ALA A   3      -2.109   2.568   0.767  1.00  1.00           O
+ATOM     15  CB  ALA A   3      -0.312   2.509  -1.418  1.00  1.00           C
+ATOM     16  N   ALA A   4      -0.232   3.127   2.045  1.00  1.00           N
+ATOM     17  CA  ALA A   4      -0.907   3.824   3.133  1.00  1.00           C
+ATOM     18  C   ALA A   4      -0.431   5.269   3.241  1.00  1.00           C
+ATOM     19  O   ALA A   4       0.757   5.336   3.552  1.00  1.00           O
+ATOM     20  CB  ALA A   4      -0.682   3.066   4.435  1.00  1.00           C
+TER
+ENDMDL
+
