@@ -26,6 +26,12 @@ from iotbx import mtz
 from cctbx.miller import array_info
 # for anisotropy correction
 import phaser
+# use Clipper by default if available
+try:
+  import clipper
+  use_clipper = True
+except ImportError:
+  use_clipper = False
 
 log = logging.getLogger(__name__)
 
@@ -236,34 +242,76 @@ def extend_ecalc(solution_id, i, sigi, fp, sigfp, highres, tempdir):
     ipfile_fiso = solution_id + '.fiso.mtz'
   else:
     ipfile = solution_id + '.aniso.mtz'
-  mtz_file = mtz.object(ipfile)
-  miller_arrays = mtz_file.as_miller_arrays()
-  for array in miller_arrays:
-    if str(array.info().labels) == "['F', 'SIGF']":
-      fobs = array 
-    elif str(array.info().labels) == "['F_ISO', 'SIGF_ISO']":
-      fiso = array
-  if have_intensities:
-    mtz_file = mtz.object(ipfile_fiso)
+  opfile = solution_id+'.aniso.ecalc.mtz'
+  
+  if use_clipper:
+    # set up Clipper data objects
+    mtzin = clipper.CCP4MTZfile()
+    mtzin.open_read(ipfile)
+    sg = mtzin.spacegroup()
+    cell = mtzin.cell()
+    reso = clipper.Resolution(highres)
+    hkls = clipper.HKL_info(sg, cell, reso, True)
+    fsig = clipper.HKL_data_F_sigF_float(hkls)
+    fsigiso = clipper.HKL_data_F_sigF_float(hkls)
+    # read data
+    mtzin.import_hkl_data(fsig, '*/*/[F, SIGF]')
+    if not have_intensities:
+      mtzin.import_hkl_data(fsigiso, '*/*/[F_ISO, SIGF_ISO]')
+      tempfiles.append(ipfile)
+    mtzin.close_read()
+    if have_intensities:
+      mtzin_fiso = clipper.CCP4MTZfile()
+      mtzin_fiso.open_read(ipfile_fiso)
+      mtzin_fiso.import_hkl_data(fsigiso, '*/*/[F_ISO, SIGF_ISO]')
+      mtzin_fiso.close_read()
+      tempfiles.append(ipfile_fiso)
+    esig = clipper.HKL_data_E_sigE_float(hkls)
+    esig.compute_from_fsigf(fsigiso)
+    # now calculate scaling
+    nparm = 12 # as in cecalc
+    initial_params = clipper.DoubleVector(nparm, 1.0)
+    basis_f = clipper.BasisFn_spline(esig, nparm, 2.0)
+    target_f = clipper.TargetFn_scaleEsq_E_sigE(esig)
+    escale = clipper.ResolutionFn(hkls, basis_f, target_f, initial_params)
+    # apply scaling
+    esig.scaleBySqrtResolution(escale)
+    # write output
+    mtzout = clipper.CCP4MTZfile()
+    mtzout.open_write(opfile)
+    mtzout.export_hkl_info(fsig.hkl_info())
+    mtzout.export_hkl_data(fsig, '*/*/[F, SIGF]')
+    mtzout.export_hkl_data(fsigiso, '*/*/[F_ISO, SIGF_ISO]')
+    mtzout.export_hkl_data(esig, '*/*/[E_ISO, SIGE_ISO]')
+    mtzout.close_write()
+
+  else:
+    mtz_file = mtz.object(ipfile)
     miller_arrays = mtz_file.as_miller_arrays()
     for array in miller_arrays:
-      if str(array.info().labels) == "['F_ISO', 'SIGF_ISO']":
+      if str(array.info().labels) == "['F', 'SIGF']":
+        fobs = array 
+      elif str(array.info().labels) == "['F_ISO', 'SIGF_ISO']":
         fiso = array
-    tempfiles.append(ipfile_fiso)
-  else:
-    tempfiles.append(ipfile)
-  
-  # Extend. Extended reflections have F=0.0 SIGF=0.0 which means the iotbx mtz reader will treat them as missing.
-  fobs = fobs.complete_array(d_min_tolerance=1e-06, d_min=highres, d_max=None, new_data_value=0.0, new_sigmas_value=0.0)    
-  # Calculate Es from F_ISO
-  fiso.setup_binner(reflections_per_bin=200)
-  eiso = fiso.quasi_normalize_structure_factors().quasi_normalized_as_normalized()
-  # write output
-  mtzout = fobs.as_mtz_dataset(column_root_label='F')
-  mtzout.add_miller_array(fiso, column_root_label='F_ISO')
-  mtzout.add_miller_array(eiso, column_root_label='E_ISO')
-  opfile = solution_id+'.aniso.ecalc.mtz'
-  mtzout.mtz_object().write(opfile)
+    if have_intensities:
+      mtz_file = mtz.object(ipfile_fiso)
+      miller_arrays = mtz_file.as_miller_arrays()
+      for array in miller_arrays:
+        if str(array.info().labels) == "['F_ISO', 'SIGF_ISO']":
+          fiso = array
+      tempfiles.append(ipfile_fiso)
+    else:
+      tempfiles.append(ipfile)
+    # Extend. Extended reflections have F=0.0 SIGF=0.0 which means the iotbx mtz reader will treat them as missing.
+    fobs = fobs.complete_array(d_min_tolerance=1e-06, d_min=highres, d_max=None, new_data_value=0.0, new_sigmas_value=0.0)    
+    # Calculate Es from F_ISO
+    fiso.setup_binner(reflections_per_bin=200)
+    eiso = fiso.quasi_normalize_structure_factors().quasi_normalized_as_normalized()
+    # write output
+    mtzout = fobs.as_mtz_dataset(column_root_label='F')
+    mtzout.add_miller_array(fiso, column_root_label='F_ISO')
+    mtzout.add_miller_array(eiso, column_root_label='E_ISO')
+    mtzout.mtz_object().write(opfile)
 # cleanup
   for file in tempfiles:
     shutil.move(file,tempdir)
