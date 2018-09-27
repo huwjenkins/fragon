@@ -1,5 +1,5 @@
 """
-    Fragon utils.py 
+    Fragon utils.py
 
     Copyright (C) 2017-2018 University of York
     Author: Huw Jenkins
@@ -26,6 +26,7 @@ import shutil
 import sys
 import errno
 import logging
+import pyrvapi
 from iotbx import pdb
 from lxml import etree
 from fragon.data import mtz_output
@@ -56,6 +57,8 @@ def parse_command_line(args):
                         help='logfile')
   optional.add_argument('--i2', required=False,  action='store_true', default=False,
                         help='ccp4i2 mode')
+  optional.add_argument('--rvapi', required=False,  action='store_true', default=False,
+                        help='rvapi output')
   optional.add_argument('--seq', required=False, default=None, type=str, metavar='protein.seq', help='sequence')
   optional.add_argument('--helix', required=False, default=None, type=int, metavar='n',
                         help='helix length')
@@ -195,7 +198,7 @@ def setup_run(mtzin, search):
     else:
       shutil.copy(search['pdbin'], run_dir)
       search['pdbin'] = os.path.basename(search['pdbin'])
-      
+
   if search['pdbin_fixed'] is not None:
     shutil.copy(search['pdbin_fixed'], run_dir)
     search['pdbin_fixed'] = os.path.basename(search['pdbin_fixed']) 
@@ -378,14 +381,14 @@ def get_solutions(phaser_solutions, root, num_solutions):
 
 def write_results_json(version=None, results_json=None, name=None, root=None, mtzin=None, stage=None, solutions=None, search=None, scoring=None):
   if version is not None:
-    output = dict(Fragon=version, name=name, root=root, mtzin=mtzin, 
+    output = dict(Fragon=version, name=name, root=root, mtzin=mtzin,
                   stage=stage, solutions=solutions, search=search, scoring=scoring)
   else:
     output = solutions
   with open(results_json, 'w') as results:
     print(json.dumps(output, sort_keys=True, indent=2, separators=(',', ': ')), file=results)
 
-def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None):
+def write_output(items, json_file=None, xml_file=None, xmlroot=None, docid=None, output=None):
   # in non-i2 mode items are added to the output dictionary which is dumped to json
   if json_file is not None:
     if 'result' in items.keys():
@@ -405,9 +408,18 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
       os.remove(tmpfile)
     os.rename(temp_filename, json_file)
     return output
-  elif xmlroot is None:
+  elif xmlroot is None and xml_file is not None:
     xmlroot = etree.Element('Fragon')
     return xmlroot
+  elif docid is None:
+    jsrview_dir =  os.path.join(os.environ['CCP4'], 'share', 'jsrview')
+    pyrvapi.rvapi_init_document('fragon_results', os.getcwd(), 'Fragon %s results' % items['Fragon'], 1, 7, jsrview_dir, None, None, None, None)
+    pyrvapi.rvapi_add_tab('tab1', 'Fragon results', True)
+    pyrvapi.rvapi_add_section  ('status','Current status','tab1',0, 0, 1, 1, True)
+    pyrvapi.rvapi_add_text('The job is currently running. Updates will be shown here after fragment placement and density modification.', 'status', 0, 0, 1, 1)
+    pyrvapi.rvapi_flush()
+    output.update(items)
+    return 'tab1', output
   elif xml_file is not None:
     # in i2 mode new items are added to the etree as this preserves the order in the xml
     for key in items.keys():
@@ -422,12 +434,11 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
           except IndexError:
             progress_node = etree.SubElement(xmlroot, 'phaser_progress')
           progress_node.text = callback[1]
-        elif callback[0] == 'Best LLG':
+        elif callback[0] == 'Best LLG/TFZ':
           best_llg_node = etree.SubElement(xmlroot, 'best_llg')
-          best_llg_node.text = callback[1]
-        elif callback[0] == 'Best TFZ':
+          best_llg_node.text = callback[1]['llg']
           best_tfz_node = etree.SubElement(xmlroot, 'best_tfz')
-          best_tfz_node.text = callback[1]
+          best_tfz_node.text = callback[1]['tfz']
       elif key == 'solutions':
         solutions = items['solutions']
         try:
@@ -447,6 +458,86 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
       os.rename(xml_file, tmpfile)
       os.remove(tmpfile)
     os.rename(temp_filename, xml_file)
+  elif docid is not None:
+    for key in items.keys():
+      if key == 'copies':
+        if items['copies'] > 1:
+          pyrvapi.rvapi_set_text('Running Phaser to place %d fragments' % items['copies'], 'status', 0, 0, 1, 1)
+        else:
+          pyrvapi.rvapi_set_text('Running Phaser to place the fragment', 'status', 0, 0, 1, 1)
+        pyrvapi.rvapi_add_tab('tab2', 'Phaser log file', False)
+        pyrvapi.rvapi_append_content(output['root'] + '_Phaser.log', True, 'tab2')
+        pyrvapi.rvapi_flush()
+        output.update(items)
+      elif key == 'callback':
+        callback = items['callback']
+        if callback[0] == 'progress':
+          pyrvapi.rvapi_set_text('Current Phaser stage: %s' % callback[1], 'status', 1, 0, 1, 1)
+          pyrvapi.rvapi_flush()
+        elif callback[0] == 'Best LLG':
+          pyrvapi.rvapi_set_text('Current best solution Log Likelihood Gain (LLG): %s Translation Function Z-score (TFZ): %s'
+                                 % (callback[1], output['best_tfz']), 'status', 2, 0, 1, 1)
+          pyrvapi.rvapi_flush()
+        elif callback[0] == 'Best TFZ':
+          output.update({'best_tfz':callback[1]})
+      elif key == 'solutions':
+        solutions = items['solutions']
+        top_llg = sorted(solutions, key=lambda r: r['llg'], reverse=True)[0]['llg']
+        top_tfz = sorted(solutions, key=lambda r: r['llg'], reverse=True)[0]['tfz']
+        top_acornCC =  sorted([solution['acornCC'] if solution['acornCC'] not in ['Running', '-', None] else None for solution in solutions], reverse=True)[0]
+        if len(solutions) == 1:
+          pyrvapi.rvapi_set_text('Phaser has found a single solution with Log Likelihood Gain (LLG) of %0.2f and Translation Function Z-score (TFZ) of %0.2f' % (top_llg,top_tfz), 'status', 0, 0, 1, 1)
+        else:
+          pyrvapi.rvapi_set_text('Phaser has found %d solutions. The top solution has Log Likelihood Gain (LLG) of %0.2f and Translation Function Z-score (TF Z-score) of %0.2f' % (output['num_phaser_solutions'],top_llg,top_tfz), 'status', 0, 0, 1, 1)
+        if output['num_phaser_solutions'] > len(solutions):
+          pyrvapi.rvapi_set_text('Attempting to improve phases for the top %d solutions by density modification with ACORN' % len(solns), 'status',  1, 0, 1, 1)
+        else:
+          pyrvapi.rvapi_set_text('Attempting to improve phases by density modification with ACORN', 'status', 1, 0, 1, 1)
+        if top_acornCC is not None:
+          pyrvapi.rvapi_set_text('The best solution so far has a correlation coefficient from density modification of %0.3f' % top_acornCC, 'status', 2, 0, 1, 1)
+        else:
+          pyrvapi.rvapi_set_text('', 'status', 2, 0, 1, 1)
+        pyrvapi.rvapi_add_table('results_table', 'Phaser solutions', 'tab1', 1, 0, 1, 1, 1)
+        pyrvapi.rvapi_put_horz_theader('results_table','Solution number','', 0)
+        pyrvapi.rvapi_put_horz_theader('results_table','Space group','', 1)
+        pyrvapi.rvapi_put_horz_theader('results_table','LLG','Phaser Log Likelihood Gain', 2)
+        pyrvapi.rvapi_put_horz_theader('results_table','TF Z-score','Phaser Translation Function Z-score', 3)
+        pyrvapi.rvapi_put_horz_theader('results_table','CC','CC from ACORN density modification', 4)
+        for solution in solutions:
+          pyrvapi.rvapi_put_table_string('results_table', '%d' % solution['number'], solution['number'] - 1, 0)
+          pyrvapi.rvapi_put_table_string('results_table', solution['sg'], solution['number'] - 1, 1)
+          pyrvapi.rvapi_put_table_string('results_table', '%0.2f' % solution['llg'], solution['number'] - 1, 2)
+          pyrvapi.rvapi_put_table_string('results_table', '%0.2f' % solution['tfz'], solution['number'] - 1, 3)
+          if solution['acornCC'] in ['Running', '-']:
+            pyrvapi.rvapi_put_table_string('results_table', solution['acornCC'].replace('-',''), solution['number'] - 1, 4)
+          elif solution['acornCC'] is None:
+            pyrvapi.rvapi_put_table_string('results_table', 'Not tested', solution['number'] - 1, 4)
+          else:
+            pyrvapi.rvapi_put_table_string('results_table', '%0.3f' % solution['acornCC'], solution['number'] - 1, 4)
+        output.update(items)
+        pyrvapi.rvapi_flush()
+      elif key == 'cc_best':
+        solutions = output['solutions']
+        top_llg = sorted(solutions, key=lambda r: r['llg'], reverse=True)[0]['llg']
+        top_tfz = sorted(solutions, key=lambda r: r['llg'], reverse=True)[0]['tfz']
+        top_acornCC =  sorted([solution['acornCC'] if solution['acornCC'] not in ['Running', '-', None] else None for solution in solutions], reverse=True)[0]
+        pyrvapi.rvapi_set_section_state ('status', False)
+        pyrvapi.rvapi_add_section('results','Results','tab1',2, 0, 1, 1, True)
+        pyrvapi.rvapi_add_text('Phaser found %d solutions. The top solution had Log Likelihood Gain (LLG) of %0.2f and Translation Function Z-score (TFZ) of %0.2f' % (output['num_phaser_solutions'], top_llg, top_tfz), 'results', 0, 0, 1, 1)
+        pyrvapi.rvapi_add_text('The best solution has a correlation coefficient from density modification of %0.3f' % top_acornCC, 'results', 1, 0, 1, 1)
+        if top_acornCC > 0.15:
+          pyrvapi.rvapi_add_text('This suggests the structure has been solved and the phases from ACORN will enable automated model building', 'results', 2, 0, 1, 1)
+        else:
+          pyrvapi.rvapi_add_text('Sorry this does not suggest a solution', 'results', 3, 0, 1, 1)
+        pyrvapi.rvapi_flush()
+      elif key == 'best_solution_id':
+        pdbout = output['name'] + '_phaser_solution.pdb'
+        mtzout = output['name'] + '_acorn_phases.mtz'
+        pyrvapi.rvapi_add_data('best', 'Best fragment placement and electron density', pdbout, 'xyz', 'tab1', 3, 0, 1, 1, True)
+        pyrvapi.rvapi_append_to_data('best', mtzout, 'hkl:map')
+      else:
+        output.update(items)
+    return output
 
 def read_results_json(results_json):
   with open(results_json, 'r') as results:
@@ -485,13 +576,13 @@ def write_output_files(name, best_solution_id, mtzin):
   mtz_output(mtzin=mtzin, acorn_mtz=acorn_mtz, mtzout=mtzout)
 
 def print_refs():
-  log.info('\nIf you solve a structure with Fragon please cite:')
-  log.info('\nPhaser crystallographic software')
-  log.info('McCoy AJ, Grosse-Kunstleve RW, Adams PD, Winn MD, Storoni LC & Read RJ.')
-  log.info('J. Appl. Cryst. (2007). 40, 658-674 (https://doi.org/10.1107/S0021889807021206)')
-  log.info('\nA modified ACORN to solve protein structures at resolutions of 1.7 A or better')
-  log.info('Yao J-X, Woolfson MM, Wilson KS & Dodson EJ.')
-  log.info('Acta Cryst. (2005). D61, 1465-1475 (https://doi.org/10.1107/S090744490502576X)')
-  log.info('\nFragon: rapid high-resolution structure determination from ideal protein fragments')
-  log.info('Jenkins HT.')
-  log.info('Acta Cryst. (2018). D74, 205-214 (https://doi.org/10.1107/S2059798318002292)\n')
+  refs = ['\nIf you solve a structure with Fragon please cite:',
+          '\nPhaser crystallographic software',
+          'McCoy AJ, Grosse-Kunstleve RW, Adams PD, Winn MD, Storoni LC & Read RJ.',
+          'J. Appl. Cryst. (2007). 40, 658-674 (http://doi.org/10.1107/S0021889807021206)',
+          '\nA modified ACORN to solve protein structures at resolutions of 1.7 A or better',
+          'Yao J-X, Woolfson MM, Wilson KS & Dodson EJ.',
+          'Acta Cryst. (2005). D61, 1465-1475 (http://dx.doi.org/10.1107/S090744490502576X)\n']
+  for line in refs:
+    log.info(line)
+  return refs

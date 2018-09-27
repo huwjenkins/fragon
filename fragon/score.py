@@ -1,5 +1,5 @@
 """
-    Fragon score.py 
+    Fragon score.py
 
     Copyright (C) 2017-2018 University of York
     Author: Huw Jenkins
@@ -44,13 +44,13 @@ class setup_solution_tester(object):
     self.lowres = lowres
     self.highres = highres
     self.solvent = solvent
-  
+
   def __call__(self, solution):
     if len(self.scores) == 0: # first callback
       for acorn_json in glob.glob('*.acorn.json'):
         try:
           self.scores.append(read_results_json(acorn_json)['acornCC'])
-        except IOError: 
+        except IOError:
           self.log = logging.getLogger(__name__)
           self.log.debug('DEBUG Error reading file: %s' % acorn_json)
     elif not_definitive(self.scores, self.acornCC_solved, self.acornCC_diff): # avoid needless file reads
@@ -59,20 +59,20 @@ class setup_solution_tester(object):
       except IOError:
         self.log = logging.getLogger(__name__)
         self.log.debug('DEBUG Error reading file: %s' % acorn_json)
-    return test_solution(tempdir=self.tempdir, 
-                         scores=self.scores, 
+    return test_solution(tempdir=self.tempdir,
+                         scores=self.scores,
                          solution=solution,
-                         test_all=self.test_all, 
-                         acornCC_solved=self.acornCC_solved, 
+                         test_all=self.test_all,
+                         acornCC_solved=self.acornCC_solved,
                          acornCC_diff=self.acornCC_diff,
-                         i=self.i, 
-                         sigi=self.sigi, 
-                         fp=self.fp, 
+                         i=self.i,
+                         sigi=self.sigi,
+                         fp=self.fp,
                          sigfp=self.sigfp,
-                         lowres=self.lowres, 
-                         highres=self.highres, 
+                         lowres=self.lowres,
+                         highres=self.highres,
                          solvent=self.solvent)
-     
+
 def run_acorn(mtzin, xyzin, mtzout, lowres, highres, solvent, acorn_script, acorn_logfile):
   with open(acorn_script,'w') as com:
     print('labin E=E_ISO FP=F_ISO SIGFP=SIGF_ISO', file=com)
@@ -88,7 +88,7 @@ def run_acorn(mtzin, xyzin, mtzout, lowres, highres, solvent, acorn_script, acor
     print('PSFINISH 0.25', file=com)
     print('CCFIN 0.9', file=com)
     print('END', file=com)
-  
+
   acorn_command = shlex.split('acorn hklin %s xyzin %s hklout %s' % (mtzin, xyzin, mtzout))
   with open(acorn_script, 'r') as com, open(acorn_logfile, 'w') as acorn_log:
     acorn = subprocess.Popen(acorn_command, stdin=com, stdout=subprocess.PIPE)
@@ -107,7 +107,7 @@ def run_acorn(mtzin, xyzin, mtzout, lowres, highres, solvent, acorn_script, acor
       else:
         break
   return cc_final, per_cycle
-  
+
 def not_definitive(scores, acornCC_solved, acornCC_diff):
   if len(scores) == 0:
     return True
@@ -144,7 +144,7 @@ def test_solution(tempdir, scores, solution, test_all, acornCC_solved, acornCC_d
     mtzout = solution_id + '.acorn.mtz'
     acorn_script = solution_id + '_acorn.com'
     acorn_logfile = solution_id + '_acorn.log'
-    cc, cc_per_cycle = run_acorn(mtzin=mtzin, xyzin=xyzin, mtzout=mtzout, 
+    cc, cc_per_cycle = run_acorn(mtzin=mtzin, xyzin=xyzin, mtzout=mtzout,
                                  lowres=lowres, highres=highres, solvent=solvent,
                                  acorn_script=acorn_script, acorn_logfile=acorn_logfile)
     write_results_json(version=None, results_json=solution_id + '.acorn.json', solutions={'name':None, 'id':solution['id'], 'acornCC':cc, 'acornCC_per_cycle':cc_per_cycle})
@@ -153,12 +153,12 @@ def test_solution(tempdir, scores, solution, test_all, acornCC_solved, acornCC_d
   solution['acornCC'] = cc
   return solution
 
-def test_solutions(json_file, xml_file, xmlroot, output, solutions, num_solutions,
+def test_solutions(json_file, xml_file, xmlroot, docid, output, solutions, num_solutions,
                    test_all, acornCC_solved, acornCC_diff, i, sigi, fp, sigfp,
                    lowres, highres, solvent, tempdir, nproc):
   # this complicated arrangement ensures every time a solution is tested the function receives the latest scores
   scores = []
-  if xml_file is not None: # i2
+  if xml_file is not None or docid is not None: # i2/rvapi
     # set up initial running solutions to dump to xml
     for solution in solutions:
       if solution['number'] <= nproc:
@@ -166,7 +166,7 @@ def test_solutions(json_file, xml_file, xmlroot, output, solutions, num_solution
       else:
         solution['acornCC'] = '-'
     write_output({'solutions':solutions},
-                json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
+                json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, docid=docid, output=output)
 
   def callback(result):
     if result['acornCC'] is not None:
@@ -174,7 +174,7 @@ def test_solutions(json_file, xml_file, xmlroot, output, solutions, num_solution
       scores.append(result['acornCC'])
     else:
       log.info('Solution %d of %d not tested as definite solution found\n' % (result['number'], num_solutions))
-    if xml_file is not None: #i2
+    if xml_file is not None or docid is not None: #i2/rvapi
       assert solutions[result['number'] - 1]['id'] == result['id']
       solutions[result['number'] - 1]['acornCC'] = result['acornCC']
       running = 0
@@ -188,14 +188,14 @@ def test_solutions(json_file, xml_file, xmlroot, output, solutions, num_solution
           solution['acornCC'] = 'Running'
           running += 1
       write_output({'solutions':solutions},
-                  json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
+                  json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, docid=docid, output=output)
     else:
       write_output({'result':result},
-                  json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
-  solution_tester = setup_solution_tester(scores=scores, 
+                  json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, docid=docid, output=output)
+  solution_tester = setup_solution_tester(scores=scores,
                                           tempdir=tempdir,
-                                          test_all=test_all, 
-                                          acornCC_solved=acornCC_solved, 
+                                          test_all=test_all,
+                                          acornCC_solved=acornCC_solved,
                                           acornCC_diff=acornCC_diff,
                                           i=i, sigi=sigi, fp=fp, sigfp=sigfp,
                                           lowres=lowres, highres=highres, solvent=solvent)
