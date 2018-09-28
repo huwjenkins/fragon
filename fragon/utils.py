@@ -453,17 +453,11 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, docid=None,
     temp_filename = 'program.xml.tmp'
     with open(temp_filename, 'w') as xmlfile: xmlfile.write(etree.tostring(xmlroot, pretty_print=True))
     if os.path.exists(xml_file):
-      os.remove(xml_file)
-    try:
-      os.rename(temp_filename, xml_file)
-    except WindowsError:
-      for attempt in range(10):
-        try:
-          os.rename(temp_filename, xml_file)
-          log.info('Tempfile rename Error: %s written on re-try %d' % (xml_file, attempt + 1))
-          break
-        except WindowsError:
-          attempt += 1
+      import uuid
+      tmpfile = str(uuid.uuid4())
+      os.rename(xml_file, tmpfile)
+      os.remove(tmpfile)
+    os.rename(temp_filename, xml_file)
   elif docid is not None:
     for key in items.keys():
       if key == 'copies':
