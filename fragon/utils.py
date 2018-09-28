@@ -399,17 +399,11 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
     with open(temp_filename, 'w') as jsonfile:
       print(json.dumps(output, sort_keys=True, indent=2, separators=(',', ': ')), file=jsonfile)
     if os.path.exists(json_file):
-      os.remove(json_file)
-    try:
-      os.rename(temp_filename, json_file)
-    except WindowsError: 
-      for attempt in range(10):
-        try:
-          os.rename(temp_filename, json_file)
-          log.info('Tempfile rename Error: %s written on re-try %d' % (json_file, attempt + 1))
-          break
-        except WindowsError:
-          attempt += 1
+      import uuid
+      tmpfile = str(uuid.uuid4())
+      os.rename(json_file, tmpfile)
+      os.remove(tmpfile)
+    os.rename(temp_filename, json_file)
     return output
   elif xmlroot is None:
     xmlroot = etree.Element('Fragon')
@@ -448,17 +442,12 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
     temp_filename = 'program.xml.tmp'
     with open(temp_filename, 'w') as xmlfile: xmlfile.write(etree.tostring(xmlroot, pretty_print=True))
     if os.path.exists(xml_file):
-      os.remove(xml_file)
-    try:
-      os.rename(temp_filename, xml_file)
-    except WindowsError: 
-      for attempt in range(10):
-        try:
-          os.rename(temp_filename, xml_file)
-          log.info('Tempfile rename Error: %s written on re-try %d' % (xml_file, attempt + 1))
-          break
-        except WindowsError:
-          attempt += 1
+      import uuid
+      tmpfile = str(uuid.uuid4())
+      os.rename(xml_file, tmpfile)
+      os.remove(tmpfile)
+    os.rename(temp_filename, xml_file)
+
 def read_results_json(results_json):
   with open(results_json, 'r') as results:
     loaded_results = json.load(results)
