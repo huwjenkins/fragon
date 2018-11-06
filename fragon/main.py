@@ -18,7 +18,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU Lesser General Public License for more details.
 """
-from __future__ import division
+from __future__ import absolute_import, division, print_function
 import os
 import sys
 import errno
@@ -423,8 +423,10 @@ def run():
 
     # count how many we tested and get best
     solutions_tested = utils.count_tested(solutions, 'acornCC')
-    cc_best = sorted(solutions, key=lambda r: r['acornCC'], reverse=True)[0]['acornCC']
-    best_solution_id = sorted(solutions, key=lambda r: r['acornCC'], reverse=True)[0]['id']
+    log.debug('DEBUG solutions (potentially with acornCC = None): %s\n' % solutions)
+    log.debug('DEBUG solutions (without acornCC = None): %s\n' % [solution for solution in solutions if solution['acornCC'] is not None])
+    cc_best = sorted([solution for solution in solutions if solution['acornCC'] is not None], key=lambda r: r['acornCC'], reverse=True)[0]['acornCC']
+    best_solution_id = sorted([solution for solution in solutions if solution['acornCC'] is not None], key=lambda r: r['acornCC'], reverse=True)[0]['id']
 
   log.info('\n\nAll done')
   log.info('Time now: %s\n' % str(time.asctime(time.localtime(time.time()))))

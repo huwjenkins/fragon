@@ -18,7 +18,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU Lesser General Public License for more details.
 """
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 import os
 import logging
 import phaser
@@ -121,9 +121,9 @@ def run_phaser(root, xml_file, xmlroot, docid, output, logfile, data, pdbin, cop
     input.setJOBS(nproc)
   else:
     input.setJOBS(1)
-  if rot_samp > 0:
+  if rot_samp is not None:
     input.setSAMP_ROTA(rot_samp)
-  if tra_samp > 0:
+  if tra_samp is not None:
     input.setSAMP_TRAN(tra_samp)
   input.setSPAC_HALL(data.getSpaceGroupHall())
   input.setCELL6(data.getUnitCell())
@@ -172,7 +172,7 @@ def run_phaser(root, xml_file, xmlroot, docid, output, logfile, data, pdbin, cop
     input.setSEAR_DOWN_PERC(search_down)
     input.setPURG_TRAN_PERC(75.00 - search_down)
   # turn purging on if requested for multicopy searches
-  if purge > 0:
+  if purge is not None:
     input.setPURG_RNP_ENAB(True)
     input.setPURG_RNP_NUMB(purge)
    # turn it off otherwise (so more solutions are output)
