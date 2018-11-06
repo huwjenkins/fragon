@@ -18,7 +18,7 @@
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU Lesser General Public License for more details.
 """
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 import sys
 import shutil
 import logging
@@ -180,7 +180,7 @@ def tidy_data(solution_id, fp, sigfp):
   fobs_mtz.mtz_object().write(mtzout)
 
 def aniso_correct(solution_id, mtzin, i, sigi, fp, sigfp, logfile):
-  from place import CallbackObject
+  from fragon.place import CallbackObject
   input = phaser.InputMR_DAT()
   input.setHKLI(mtzin)
   if i is not None and sigi is not None:
