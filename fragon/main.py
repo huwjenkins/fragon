@@ -128,6 +128,9 @@ def run():
     tempdir = os.path.abspath('TEMP')
     if args.ensemble:
       shutil.copy(os.path.join(os.environ['CCP4'], 'share', 'fragon', 'include', 'fragments', search['pdbin']), os.getcwd())
+    elif args.fragment:
+      shutil.copy(search['pdbin'], os.getcwd())
+    search['pdbin'] = os.path.basename(search['pdbin'])
 
   log.debug('DEBUG start_point : %s  \n' % start_point)
   log.info('Working directory is: %s\n' % run_dir)

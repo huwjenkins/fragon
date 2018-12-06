@@ -198,7 +198,7 @@ def setup_run(mtzin, search):
       
   if search['pdbin_fixed'] is not None:
     shutil.copy(search['pdbin_fixed'], run_dir)
-    search['pdbin_fixed'] = os.path.basename(search['seqin']) 
+    search['pdbin_fixed'] = os.path.basename(search['pdbin_fixed']) 
   return run_dir, tempdir
 
 def define_search(args):
