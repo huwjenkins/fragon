@@ -256,7 +256,8 @@ def run():
     if data_info['highres'] >= 1.71 and i2:
       utils.write_output({'Sorry':'Resolution'},
                         json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
-      sys.exit('Sorry Fragon requires high resolution data.')
+      log.info('Sorry Fragon requires high resolution data.')
+      sys.exit()
     log.info('Search resolution is            %0.2f - %0.2f Angstrom' % (search['lowres'] if search['lowres'] is not None else data_info['lowres'],
                                                                          search['highres'] if search['highres'] is not None else data_info['highres']))
     utils.write_output({'search_lowres':search['lowres'], 'search_highres':search['highres']},
@@ -359,7 +360,8 @@ def run():
     else:
       utils.write_output({'Sorry':'No Solutions'},
                         json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, output=output)
-      sys.exit('Phaser failed to find any solutions.')
+      log.info('Phaser failed to find any solutions.')
+      sys.exit()
 
     log.info('\nTime now: %s' % str( time.asctime(time.localtime(time.time()))))
     phaser_time = time.time()
