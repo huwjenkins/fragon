@@ -348,6 +348,7 @@ def run_rnp(root, xml_file, xmlroot, docid, output, logfile, data, formfactors, 
       for mr in solution.KNOWN:
         rot = mr.getEuler()
         tra = mr.TRA
+        log.debug('DEBUG copy: %d, len(models): %d, rot: %s, tra %s' %(copy, len(models), rot, tra))
         input.addSOLU_6DIM_ENSE(models[copy],[rot[0],rot[1],rot[2]],True,[tra[0],tra[1],tra[2]],mr.BFAC,False,False,False,1.0,1.0)
         copy += 1
   if tncs:
@@ -416,6 +417,11 @@ def place_fragment(root, xml_file, xmlroot, docid, output, data, formfactors, pd
       log.info('    Rescoring models in ensemble, logfile is: %s' % (os.path.abspath(phaser_logfile)))
     if tncs:
       log.info('\n    tNCS correction not applied')
+    copies_placed = len(phaser_solutions[0].KNOWN)
+    log.debug('DEBUG copies %d len(solutions)[0].KNOWN %d' % (copies, len(phaser_solutions[0].KNOWN)))
+    if len(phaser_solutions[0].KNOWN) > copies:
+      log.info('Phaser placed more copies of the search fragment than requested increasing copies from %d to %d' % (copies, copies_placed))
+      copies = copies_placed
     if rescore_strands:
       models = split_chains(pdbin, copies)
     elif rescore_residues:
