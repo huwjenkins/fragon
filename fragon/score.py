@@ -31,7 +31,7 @@ from libtbx import easy_mp
 log = logging.getLogger(__name__)
 
 class setup_solution_tester(object):
-  def __init__(self, scores, tempdir, test_all, acornCC_solved, acornCC_diff, i, sigi, fp, sigfp, lowres, highres, solvent):
+  def __init__(self, scores, tempdir, test_all, acornCC_solved, acornCC_diff, i, sigi, fp, sigfp, lowres, highres, solvent, formfactors):
     self.scores = scores
     self.tempdir = tempdir
     self.test_all = test_all
@@ -44,6 +44,7 @@ class setup_solution_tester(object):
     self.lowres = lowres
     self.highres = highres
     self.solvent = solvent
+    self.formfactors = formfactors
 
   def __call__(self, solution):
     if len(self.scores) == 0: # first callback
@@ -71,9 +72,10 @@ class setup_solution_tester(object):
                          sigfp=self.sigfp,
                          lowres=self.lowres,
                          highres=self.highres,
-                         solvent=self.solvent)
+                         solvent=self.solvent,
+                         formfactors=self.formfactors)
 
-def run_acorn(mtzin, xyzin, mtzout, lowres, highres, solvent, acorn_script, acorn_logfile):
+def run_acorn(mtzin, xyzin, mtzout, lowres, highres, solvent, formfactors, acorn_script, acorn_logfile):
   with open(acorn_script,'w') as com:
     print('labin E=E_ISO FP=F_ISO SIGFP=SIGF_ISO', file=com)
     print('RESO %0.2f %0.2f' % (lowres,highres), file=com)
@@ -89,7 +91,11 @@ def run_acorn(mtzin, xyzin, mtzout, lowres, highres, solvent, acorn_script, acor
     print('CCFIN 0.9', file=com)
     print('END', file=com)
 
-  acorn_command = shlex.split('acorn hklin %s xyzin %s hklout %s' % (mtzin, xyzin, mtzout))
+  if formfactors == 'electron':
+    atomsf = os.path.join(os.environ['CLIBD'], 'atomsf_electron.lib')
+    acorn_command = shlex.split('acorn atomsf %s hklin %s xyzin %s hklout %s' % (atomsf, mtzin, xyzin, mtzout))
+  else:
+    acorn_command = shlex.split('acorn hklin %s xyzin %s hklout %s' % (mtzin, xyzin, mtzout))
   with open(acorn_script, 'r') as com, open(acorn_logfile, 'w') as acorn_log:
     acorn = subprocess.Popen(acorn_command, stdin=com, stdout=subprocess.PIPE)
     per_cycle = []
@@ -119,7 +125,7 @@ def not_definitive(scores, acornCC_solved, acornCC_diff):
     return True
 
 def test_solution(tempdir, scores, solution, test_all, acornCC_solved, acornCC_diff,
-                  i, sigi, fp, sigfp, lowres, highres, solvent):
+                  i, sigi, fp, sigfp, lowres, highres, solvent, formfactors):
   solution_id = solution['id']
   if i is not None and sigi is not None:
     have_intensities = True
@@ -145,7 +151,7 @@ def test_solution(tempdir, scores, solution, test_all, acornCC_solved, acornCC_d
     acorn_script = solution_id + '_acorn.com'
     acorn_logfile = solution_id + '_acorn.log'
     cc, cc_per_cycle = run_acorn(mtzin=mtzin, xyzin=xyzin, mtzout=mtzout,
-                                 lowres=lowres, highres=highres, solvent=solvent,
+                                 lowres=lowres, highres=highres, solvent=solvent, formfactors=formfactors,
                                  acorn_script=acorn_script, acorn_logfile=acorn_logfile)
     write_results_json(version=None, results_json=solution_id + '.acorn.json', solutions={'name':None, 'id':solution['id'], 'acornCC':cc, 'acornCC_per_cycle':cc_per_cycle})
   else:
@@ -153,7 +159,7 @@ def test_solution(tempdir, scores, solution, test_all, acornCC_solved, acornCC_d
   solution['acornCC'] = cc
   return solution
 
-def test_solutions(json_file, xml_file, xmlroot, docid, output, solutions, num_solutions,
+def test_solutions(json_file, xml_file, xmlroot, docid, output, formfactors, solutions, num_solutions,
                    test_all, acornCC_solved, acornCC_diff, i, sigi, fp, sigfp,
                    lowres, highres, solvent, tempdir, nproc):
   # this complicated arrangement ensures every time a solution is tested the function receives the latest scores
@@ -198,6 +204,8 @@ def test_solutions(json_file, xml_file, xmlroot, docid, output, solutions, num_s
                                           acornCC_solved=acornCC_solved,
                                           acornCC_diff=acornCC_diff,
                                           i=i, sigi=sigi, fp=fp, sigfp=sigfp,
-                                          lowres=lowres, highres=highres, solvent=solvent)
+                                          lowres=lowres, highres=highres,
+                                          solvent=solvent,
+                                          formfactors=formfactors)
   results = easy_mp.parallel_map(func=solution_tester, iterable=solutions, callback=callback, preserve_order=False, processes=nproc)
   return results

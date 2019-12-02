@@ -109,7 +109,7 @@ def calculate_solvent(root, data, seqin, ncs_copies, highres, logfile):
 
   return cca.getBestZ(), cca.getBestVM(), cca.getZ()[0], cca.getVM()[0]
 
-def run_phaser(root, xml_file, xmlroot, docid, output, logfile, data, pdbin, copies, rms, pdbin_fixed,
+def run_phaser(root, xml_file, xmlroot, docid, output, logfile, data, formfactors, pdbin, copies, rms, pdbin_fixed,
                seqin, ncs_copies, phaser_solvent, sgalternative, sg_list, input_hand, tncs,
                search_lowres, search_highres, rot_peaks, rot_cluster_off,
                rot_samp, tra_samp, search_down, tfz_solved, solutions, purge,
@@ -128,6 +128,9 @@ def run_phaser(root, xml_file, xmlroot, docid, output, logfile, data, pdbin, cop
   input.setSPAC_HALL(data.getSpaceGroupHall())
   input.setCELL6(data.getUnitCell())
   input.setREFL_DATA(data.getDATA())
+  # electron formfactors
+  if formfactors == 'electron':
+    input.setFORM('ELECTRON')
   input.addENSE_PDB_RMS(root, pdbin, rms)
   input.setROOT(root)
   # fixed solution
@@ -312,7 +315,7 @@ def split_models(pdbin):
       print(selection.as_pdb_string(),'END', file=pdbfile)
   return models
 
-def run_rnp(root, xml_file, xmlroot, docid, output, logfile, data, tncs, pdbin, models,
+def run_rnp(root, xml_file, xmlroot, docid, output, logfile, data, formfactors, tncs, pdbin, models,
             solutions, num_solutions, rescore_all, rescore_models, nproc):
   input = phaser.InputMR_RNP()
   # test OpenMP
@@ -323,6 +326,9 @@ def run_rnp(root, xml_file, xmlroot, docid, output, logfile, data, tncs, pdbin, 
   input.setSPAC_HALL(data.getSpaceGroupHall())
   input.setCELL6(data.getUnitCell())
   input.setREFL_DATA(data.getDATA())
+  # electron formfactors
+  if formfactors == 'electron':
+    input.setFORM('ELECTRON')
   for model in models:
     input.addENSE_PDB_RMS(model, model + '.pdb', solutions[0].VRMS.values()[0][0])
   if not rescore_all:
@@ -379,7 +385,7 @@ def run_rnp(root, xml_file, xmlroot, docid, output, logfile, data, tncs, pdbin, 
     return 'No solutions'
 
 
-def place_fragment(root, xml_file, xmlroot, docid, output, data, pdbin, copies, rms, pdbin_fixed,
+def place_fragment(root, xml_file, xmlroot, docid, output, data, formfactors, pdbin, copies, rms, pdbin_fixed,
                    seqin, ncs_copies, phaser_solvent, sgalternative, sg_list, input_hand, tncs,
                    search_lowres, search_highres, rot_peaks, rot_cluster_off, rot_samp, tra_samp,
                    search_down, tfz_solved, solutions, purge, rescore_strands,
@@ -394,7 +400,7 @@ def place_fragment(root, xml_file, xmlroot, docid, output, data, pdbin, copies, 
     log.info('\n    tNCS correction not applied')
 
   phaser_solutions = run_phaser(root=root, xml_file=xml_file, xmlroot=xmlroot, docid=docid, output=output, logfile=phaser_logfile,
-                                data=data, pdbin=pdbin, copies=copies, rms=rms, pdbin_fixed=pdbin_fixed,
+                                data=data, formfactors=formfactors, pdbin=pdbin, copies=copies, rms=rms, pdbin_fixed=pdbin_fixed,
                                 seqin=seqin, ncs_copies=ncs_copies, phaser_solvent=phaser_solvent,
                                 sgalternative=sgalternative, sg_list=sg_list, input_hand=input_hand, tncs=tncs,
                                 search_lowres=search_lowres, search_highres=search_highres,
@@ -423,7 +429,7 @@ def place_fragment(root, xml_file, xmlroot, docid, output, data, pdbin, copies, 
     elif rescore_models:
       models = split_models(pdbin)
     rescored_solutions = run_rnp(root=root, xml_file=xml_file, xmlroot=xmlroot, docid=docid, output=output, logfile=phaser_logfile,
-                data=data, tncs=tncs, pdbin=pdbin, models=models, solutions=phaser_solutions,
+                data=data, formfactors=formfactors, tncs=tncs, pdbin=pdbin, models=models, solutions=phaser_solutions,
                 num_solutions=solutions, rescore_all=rescore_all, rescore_models=rescore_models, nproc=nproc)
 
     return rescored_solutions

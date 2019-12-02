@@ -162,11 +162,15 @@ def run():
   if data_info['anomalous_merged']:
     mtzin = mtzin[:-4] + '_Imean.mtz'
 
+  # Scattering form factors
+  formfactors = args.formfactors
+  log.debug('DEBUG Setting scattering form factors to %s\n' % formfactors)
+
   # prepare data for use by Phaser
   if data_info['i'] is not None and data_info['sigi'] is not None:
     if args.FP is None:
       i, sigi, fp, sigfp = data_info['i'], data_info['sigi'], None, None
-      utils.write_output({'mtzin':mtzin, 'i':i, 'sigi':sigi},
+      utils.write_output({'mtzin':mtzin, 'i':i, 'sigi':sigi, 'formfactors':formfactors},
                          json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, docid=docid, output=output)
     else:
       log.warning('*** Warning you have chosen to use structure factors ***\n')
@@ -174,12 +178,16 @@ def run():
       i, sigi, fp, sigfp = None, None, data_info['fp'], data_info['sigfp']
   else:
     i, sigi, fp, sigfp = None, None, data_info['fp'], data_info['sigfp']
-    utils.write_output({'mtzin':mtzin, 'f':fp, 'sigf':sigfp},
+    utils.write_output({'mtzin':mtzin, 'f':fp, 'sigf':sigfp, 'formfactors':formfactors},
                       json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, docid=docid, output=output)
   log.debug('DEBUG i:%s sigi:%s fp:%s sigfp %s\n' % (i,sigi,fp,sigfp))
   data_logfile = root + '_prepare_data.log'
   log.info('Preparing data, logfile is: %s\n' % os.path.abspath(data_logfile))
   data_array = place.prepare_data(mtzin=mtzin, i=i, sigi=sigi, fp=fp, sigfp=sigfp, logfile=data_logfile)
+
+  # User probably wants to know this!
+  if formfactors == 'electron':
+    log.info('Using electron scattering form factors in Phaser search and ACORN density modification\n')
 
   if start_point is None:
     # solvent content
@@ -323,6 +331,7 @@ def run():
 
     phaser_solutions = place.place_fragment(root=root, xml_file=xml_file, xmlroot=xmlroot, docid=docid, output=output,
                                             data=data_array,
+                                            formfactors=formfactors,
                                             pdbin=search['pdbin'],
                                             copies=search['copies'],
                                             rms=search['rms'],
@@ -395,6 +404,7 @@ def run():
     log.debug('DEBUG acornCC_diff: %0.4f search acornCC_diff: %0.4f data highres: %0.2f\n' % (acornCC_diff, scoring['acornCC_diff'], data_info['highres']))
 
     solutions = score.test_solutions(json_file=json_file, xml_file=xml_file, xmlroot=xmlroot, docid=docid, output=output,
+                                     formfactors=formfactors,
                                      solutions=solutions,
                                      num_solutions=num_solutions,
                                      test_all=scoring['test_all'],
