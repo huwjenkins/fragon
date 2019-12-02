@@ -129,6 +129,8 @@ def parse_command_line(args):
                         help='turn on debugging messages')
   optional.add_argument('--nproc', required=False, type=int, metavar='1', default=1,
                         help='no. threads')
+  optional.add_argument('--formfactors', required=False, type=str, choices=['xray', 'electron'], metavar='xray', default='xray',
+                        help='use x-ray or electron scattering factors')
   optional.add_argument('--version', required=False, action='store_true', default=False,
                         help='print version')
   if len(args) == 0:
