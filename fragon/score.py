@@ -97,7 +97,7 @@ def run_acorn(mtzin, xyzin, mtzout, lowres, highres, solvent, formfactors, acorn
   else:
     acorn_command = shlex.split('acorn hklin %s xyzin %s hklout %s' % (mtzin, xyzin, mtzout))
   with open(acorn_script, 'r') as com, open(acorn_logfile, 'w') as acorn_log:
-    acorn = subprocess.Popen(acorn_command, stdin=com, stdout=subprocess.PIPE)
+    acorn = subprocess.Popen(acorn_command, stdin=com, stdout=subprocess.PIPE, universal_newlines=True)
     per_cycle = []
     while True:
       line = acorn.stdout.readline()
