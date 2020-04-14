@@ -388,7 +388,7 @@ def write_results_json(version=None, results_json=None, name=None, root=None, mt
 def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None):
   # in non-i2 mode items are added to the output dictionary which is dumped to json
   if json_file is not None:
-    if 'result' in items.keys():
+    if 'result' in items:
       result = items['result']
       for solution in output['solutions']:
         if solution['id'] == result['id']:
@@ -410,7 +410,7 @@ def write_output(items, json_file=None, xml_file=None, xmlroot=None, output=None
     return xmlroot
   elif xml_file is not None:
     # in i2 mode new items are added to the etree as this preserves the order in the xml
-    for key in items.keys():
+    for key in items:
       if key == 'Fragon':
         version_node = etree.SubElement(xmlroot, 'Version')
         version_node.text = output['Fragon']
